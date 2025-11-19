@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Server to manage piSignage players in a LAN or Private Network">
+    <meta name="author" content="colloqi">
+    <meta name="copyright" content=", Copyright (c) 2015">
+    <link rel="icon" href="app/img/pisignage-logo.png">
+    <title>pisignage-server</title>
+    <!-- Bootstrap core CSS-->
+    <link rel="stylesheet" href="app/css/bootstrap.min.css">
+    <link rel="stylesheet" href="app/css/lato.min.css">
+    <link rel="stylesheet" href="app/css/font-awesome.min.css">
+    <link rel="stylesheet" href="app/css/ng-sortable.min.css">
+    <link rel="stylesheet" href="app/css/ng-sortable.style.min.css">
+    <link rel="stylesheet" href="app/css/custom.css">
+    <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js"></script>
+    <script src="app/lib/angular/angular.min.js"></script>
+    <script src="app/lib/angular-ui-router/angular-ui-router.min.js"></script>
+    <script src="app/lib/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+    <script src="app/lib/ng-sortable/ng-sortable.min.js"></script>
+    <script src="app/lib/angularjs-dropdown-multiselect/lodash.min.js"></script>
+    <script src="app/lib/angularjs-dropdown-multiselect/angularjs-dropdown-multiselect.min.js"></script>
+    <script src="app/lib/utils/async.min.js"></script>
+    <script src="app/lib/utils/angular-timeago.min.js"></script>
+    <script src="app/js/pi-config.js"></script>
+    <script src="app/js/controllers/pi-index.js"></script>
+    <script src="app/js/controllers/dashboard.js"></script>
+    <script src="app/js/controllers/groups.js"></script>
+    <script src="app/js/controllers/assets.js"></script>
+    <script src="app/js/controllers/settings.js"></script>
+    <script src="app/js/controllers/playlists.js"></script>
+    <script src="app/js/controllers/labels.js"></script>
+    <script src="app/js/directives/pi.js"></script>
+    <script src="app/js/filters/pi.js"></script>
+    <script src="app/js/services/pi.js"></script>
+    <script src="app/js/services/cast.js"></script>
+    <script src="app/js/services/assets.js"></script>
+    <script src="app/js/services/players.js"></script>
+    <script src="app/js/app-pc.js"></script>
+  </head>
+  <body id="serverapp" ng-app="piServerApp">
+    <div class="height100" ui-view="" autoscroll="false">Please wait while the app loads</div>
+  </body>
+</html>

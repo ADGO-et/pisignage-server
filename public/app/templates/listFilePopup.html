@@ -1,0 +1,23 @@
+
+<div class="panel panel-primary" style="margin-bottom:0px;">
+  <div class="panel-heading">
+    <h4><span>Available Files</span>
+      <button class="btn btn-default pull-right" ng-click="fileDisplayModal.close()">Cancel</button>
+    </h4>
+  </div>
+  <ul class="list-group">
+    <li class="list-group-item list-group-item-info">
+      <input class="form-control" type="text" placeholder="{{'Filter by Name' }}" ng-model="search"/>
+    </li>
+    <li class="list-group-item" ng-repeat="file in assetFiles | filter:imgFilter | filter:search " ng-click="saveAssetFile(file)">
+      <div class="media">
+        <div class="media-left"><a class="pull-left" href="#" ng-if="filesDetails[file].thumbnail"><img class="media-object" src="{{filesDetails[file].thumbnail}}"/></a>
+          <div class="media-object letter-box img-rounded pull-left" ng-if="!filesDetails[file].thumbnail">{{filesDetails[file].type.slice(0,1) || 'N' }}</div>
+        </div>
+        <div class="media-body">
+          <div class="media-heading">&nbsp;{{file}}</div>
+        </div>
+      </div>
+    </li>
+  </ul>
+</div>

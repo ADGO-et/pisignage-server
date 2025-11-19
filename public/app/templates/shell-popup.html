@@ -1,0 +1,30 @@
+
+<div class="modal-header">
+  <h4><span class="text-warning">{{msg.player.statusClass == "text-danger"?"Player is OFFLINE":"Pi Shell"}}</span><span class="pull-right btn-group">
+      <button class="btn btn-sm" ng-class="msg.player.tvStatus? 'btn-primary':'btn-default'" ng-click="changeTvState(false)">Tv On</button>
+      <button class="btn btn-sm" ng-class="!msg.player.tvStatus? 'btn-primary':'btn-default'" ng-click="changeTvState(true)">Tv OFF</button></span></h4><small class="text-danger pull-right" ng-if="confirmmsg">{{confirmmsg}}</small>
+</div>
+<div class="modal-body">
+  <form name="shellform" ng-submit="execute()">
+    <div class="form-group">
+      <div class="input-group col-xs-12">
+        <input class="form-control" type="text" ng-model="msg.cmd" ng-keydown="getOldEntry($event)"/><span class="input-group-btn">
+          <button class="btn btn-success" type="submit">EXECUTE</button></span>
+      </div><small><i class="text-success">Use arrow keys &nbsp &#8593; &nbsp and &nbsp &#8595; &nbsp to check Commands history</i></small>
+    </div>
+  </form>
+  <div class="alert alert-info">
+    <pre ng-if="msg.err"><small class="text-danger">{{msg.err}}</small></pre>
+    <pre ng-if="msg.stdout"><small class="text-info">stdout: {{msg.stdout}}</small></pre>
+    <pre ng-if="msg.stderr"><small class="text-warning">stderr: {{msg.stderr}}</small></pre>
+  </div>
+  <div class="row">
+    <div class="col-sm-10"><a class="thumbnail" href="#" ng-click="getSnapshot()"><img ng-src="{{snapshot.image}}" err-src="/app/img/snapshot.png" ng-class="snapshot.cssClass"/><small>last taken: {{snapshot.lastTaken | date: "MMM dd, hh:mm a"}}</small>
+        <button class="btn btn-block btn-success">{{snapshot.buttonTxt}}&nbsp;(needs v1.6.0+)</button></a></div>
+    <div class="col-sm-2">
+      <button class="btn btn-warning pull-right" ng-click="modal.dismiss()">Dismiss</button>
+    </div>
+  </div>
+</div>
+<!--.modal-footerbutton.btn.btn-warning(ng-click='modal.dismiss()') Dismiss
+-->

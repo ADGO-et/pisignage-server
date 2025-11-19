@@ -1,0 +1,32 @@
+
+<div class="modal-header">
+  <h4><span>Player settings for the player&nbsp;</span><span>{{selectedPlayer.name || selectedPlayer.localName}}</span>
+    <button class="btn btn-info btn-sm pull-right" ng-click="settingsModal.close()">Done</button>
+  </h4>
+</div>
+<div class="modal-body">
+  <form role="form" name="playersettings">
+    <div class="form-group row">
+      <label class="control-label col-sm-3">Selected Group</label>
+      <div class="col-sm-6">
+        <select class="form-control" ng-model="selectedGroup" ng-change="assignGroup(selectedGroup)" ng-options="group for group in group.groupNames">
+          <option value="">-- none --</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group row" ng-show="playerLabels.length">
+      <label class="control-label col-sm-3"> Select Categories</label>
+      <div class="col-sm-6" ng-if="playerLabels">
+        <div ng-dropdown-multiselect="" options="playerLabels" selected-model="ngDropdown.selectedLabels" events="ngDropdown.events" translation-texts="ngDropdown.customTexts" extra-settings="ngDropdown.extraSettings" checkboxes="true"></div>
+      </div>
+    </div>
+  </form>
+</div>
+<div class="modal-footer">
+  <div class="form-group row">
+    <label class="control-label col-sm-7 col-sm-offset-3 text-danger"> Delete the player from server data base</label>
+    <div class="col-sm-2">
+      <button class="btn btn-danger btn-sm pull-right" ng-click="deregister()">DELETE</button>
+    </div>
+  </div>
+</div>

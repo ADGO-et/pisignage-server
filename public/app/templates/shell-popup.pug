@@ -1,0 +1,32 @@
+.modal-header
+    h4
+        span.text-warning {{msg.player.statusClass == "text-danger"?"Player is OFFLINE":"Pi Shell"}}
+        span.pull-right.btn-group
+            button.btn.btn-sm(ng-class="msg.player.tvStatus? 'btn-primary':'btn-default'",ng-click="changeTvState(false)") Tv On
+            button.btn.btn-sm(ng-class="!msg.player.tvStatus? 'btn-primary':'btn-default'",ng-click="changeTvState(true)") Tv OFF
+    small.text-danger.pull-right(ng-if="confirmmsg") {{confirmmsg}}
+.modal-body
+    form(name="shellform",ng-submit='execute()')
+        .form-group
+            .input-group.col-xs-12
+                input.form-control(type='text', ng-model='msg.cmd',ng-keydown='getOldEntry($event)')
+                span.input-group-btn
+                    button.btn.btn-success(type="submit") EXECUTE
+            small
+                i.text-success Use arrow keys &nbsp &#8593; &nbsp and &nbsp &#8595; &nbsp to check Commands history
+    .alert.alert-info
+        pre(ng-if="msg.err"): small.text-danger {{msg.err}}
+        pre(ng-if="msg.stdout"): small.text-info stdout: {{msg.stdout}}
+        pre(ng-if="msg.stderr"): small.text-warning stderr: {{msg.stderr}}
+    .row
+        .col-sm-10
+            a.thumbnail(href="#",ng-click="getSnapshot()")
+                img(ng-src="{{snapshot.image}}",err-src="/app/img/snapshot.png",ng-class="snapshot.cssClass")
+                small last taken: {{snapshot.lastTaken | date: "MMM dd, hh:mm a"}}
+                button.btn.btn-block.btn-success {{snapshot.buttonTxt}}&nbsp;(needs v1.6.0+)
+
+        .col-sm-2
+            button.btn.btn-warning.pull-right(ng-click='modal.dismiss()') Dismiss
+
+//.modal-footer
+    button.btn.btn-warning(ng-click='modal.dismiss()') Dismiss

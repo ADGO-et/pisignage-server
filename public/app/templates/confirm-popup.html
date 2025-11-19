@@ -1,0 +1,12 @@
+
+<div class="modal-header">
+  <button class="close" ng-click="cancel()">&times;</button>
+  <h3 class="text-danger">Please Confirm</h3>
+</div>
+<div class="modal-body">
+  <h5><span ng-show="!noPrepend">Do you want to delete the&nbsp</span><b>{{deleteText}}</b>&nbsp?</h5>
+</div>
+<div class="modal-footer">
+  <button class="btn" ng-click="cancel()">Cancel</button>
+  <button class="btn btn-danger" ng-click="ok()">OK</button>
+</div>

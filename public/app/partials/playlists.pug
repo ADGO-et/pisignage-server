@@ -1,0 +1,27 @@
+.panel.panel-info
+    .panel-heading
+        h3.panel-title
+            span(ng-click="collapsed = !collapsed;") Playlists&nbsp;
+                i.fa.fa-lg(ng-class="{'fa-caret-right':collapsed,'fa-caret-down':!collapsed}")
+            a.btn.btn-sm.btn-link.pull-right(ng-click='fn.edit()'): em(ng-class="{'text-danger':!fn.editMode,'text-success':fn.editMode}")
+                | {{fn.editMode?'Done':'Edit'}}
+    .form-group(ng-hide="collapsed")
+        form(name="addform", ng-submit='fn.add()')
+                .input-group.col-xs-12
+                    input.form-control(type='text', ng-model='newPlaylist.name',placeholder="Add a new Playlist",required)
+                    span.input-group-btn
+                        button.btn.btn-default(type="submit")
+                            i.fa.fa-plus
+
+    ul.nav.nav-pills.nav-stacked(ng-hide="collapsed")
+        li(ng-repeat="playlist in playlist.playlists",ng-class="fn.getClass(playlist)")
+            a(ng-click="fn.selected(playlist)")
+                .row
+                    .col-sm-10
+                        small(ng-hide="playlist.renameEnable && fn.editMode") {{ playlist.name }}
+                        .form-group(ng-show="playlist.renameEnable && fn.editMode")
+                            input.form-control(type='text', ng-model='playlist.newname',ng-blur="fn.rename($index)")
+                    .col-sm-2
+                        button.close(ng-click='$event.stopPropagation();fn.delete($index);',ng-if="fn.editMode")
+                            i.fa.fa-times-circle(ng-class="{'text-danger': fn.editMode}")
+
