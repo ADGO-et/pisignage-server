@@ -14,37 +14,32 @@ var favicon = require('serve-favicon'),             //express middleware
     cookieParser = require('cookie-parser');
 
 
-// ---------------------------------------------
-// CORS Middleware
-// ---------------------------------------------
+
+// -----------------------------------------------------
+// CORS Middleware — Allow all origins, methods, headers
+// -----------------------------------------------------
 var allowCrossDomain = function (req, res, next) {
-    const allowedOrigins = [
-        "http://localhost:3000",
-        "https://your-production-domain.com"
-    ];
 
-    const origin = req.headers.origin;
+    // Allow ALL origins
+    res.header("Access-Control-Allow-Origin", "*");
 
-    if (allowedOrigins.includes(origin)) {
-        res.header("Access-Control-Allow-Origin", origin);
-    }
+    // IMPORTANT: When origin is "*", browser will reject credentials.
+    // So we set credentials to false.
+    res.header("Access-Control-Allow-Credentials", "false");
 
-    res.header("Access-Control-Allow-Credentials", "true");
-    res.header("Vary", "Origin");
-    res.header("Access-Control-Expose-Headers", "Content-Length");
-
-    // ★ Include PATCH here
+    // Allow ALL methods
     res.header(
         "Access-Control-Allow-Methods",
-        "HEAD, GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD"
     );
 
-    res.header(
-        "Access-Control-Allow-Headers",
-        "Content-Type, Content-Length, Response-Type, X-Requested-With, Origin, Accept, Authorization, x-access-token, Last-Modified"
-    );
+    // Allow ALL request headers
+    res.header("Access-Control-Allow-Headers", "*");
 
-    // ★ Allow OPTIONS request to continue to PATCH/DELETE/PUT
+    // Allow ALL response headers to be exposed
+    res.header("Access-Control-Expose-Headers", "*");
+
+    // Preflight request response
     if (req.method === "OPTIONS") {
         return res.sendStatus(204);
     }
@@ -53,85 +48,89 @@ var allowCrossDomain = function (req, res, next) {
 };
 
 
-// ---------------------------------------------
-// Basic HTTP Authentication Middleware
-// (Modified to allow OPTIONS preflight)
-// ---------------------------------------------
+// -----------------------------------------------------
+// Basic HTTP Authentication (does NOT block CORS)
+// -----------------------------------------------------
 var basicHttpAuth = function (req, res, next) {
 
-    // ★ PREVENT blocking preflight requests
-    if (req.method === "OPTIONS") {
+    // CORS preflight must always pass
+    if (req.method === 'OPTIONS') {
         return next();
     }
 
-    var auth = req.headers["authorization"];
+    var auth = req.headers['authorization'];
 
     if (!auth) {
         res.statusCode = 401;
-        res.setHeader("WWW-Authenticate", 'Basic realm="Secure Area"');
-        return res.end("<html><body>Authentication required to access this path</body></html>");
+        res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
+        return res.end('<html><body>Authentication required to access this path</body></html>');
     }
 
-    var tmp = auth.split(" ");
-    var buf = Buffer.from(tmp[1], "base64");
+    var tmp = auth.split(' ');
+    var buf = Buffer.from(tmp[1], 'base64');
     var plain_auth = buf.toString();
-    var creds = plain_auth.split(":");
+    var creds = plain_auth.split(':');
 
     var username = creds[0];
     var password = creds[1];
 
-    require("../app/controllers/licenses").getSettingsModel(function (err, settings) {
+    require('../app/controllers/licenses').getSettingsModel(function (err, settings) {
         if (
             (!settings.authCredentials) ||
-            ((!settings.authCredentials.user || username == settings.authCredentials.user) &&
-            (!settings.authCredentials.password || password == settings.authCredentials.password))
+            ((!settings.authCredentials.user || username === settings.authCredentials.user) &&
+             (!settings.authCredentials.password || password === settings.authCredentials.password))
         ) {
             return next();
         } else {
             console.log("HTTP request rejected for " + req.path);
             res.statusCode = 401;
-            res.setHeader("WWW-Authenticate", 'Basic realm="Secure Area"');
-            return res.end("<html><body>Authentication required to access this path</body></html>");
+            res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
+            return res.end('<html><body>Authentication required to access this path</body></html>');
         }
     });
 };
 
 
-// ---------------------------------------------
-// EXPORT MODULE
-// ---------------------------------------------
+// -----------------------------------------------------
+// EXPORT APP CONFIGURATION
+// -----------------------------------------------------
 module.exports = function (app) {
+
     // CORS must be first
     app.use(allowCrossDomain);
 
-    if (process.env.NODE_ENV == "development") {
+    // Authentication after CORS
+    app.use(basicHttpAuth);
+
+    // Development config
+    if (process.env.NODE_ENV == 'development') {
+
         app.use(function noCache(req, res, next) {
-            if (req.url.indexOf("/scripts/") === 0) {
-                res.header("Cache-Control", "no-cache, no-store, must-revalidate");
-                res.header("Pragma", "no-cache");
-                res.header("Expires", 0);
+            if (req.url.indexOf('/scripts/') === 0) {
+                res.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+                res.header('Pragma', 'no-cache');
+                res.header('Expires', 0);
             }
             next();
         });
+
         app.use(errorHandler());
         app.locals.pretty = true;
         app.locals.compileDebug = true;
     }
 
-    if (process.env.NODE_ENV == "production") {
-        app.use(favicon(path.join(config.root, "public/app/img", "favicon.ico")));
+    // Production assets
+    if (process.env.NODE_ENV == 'production') {
+        app.use(favicon(path.join(config.root, 'public/app/img', 'favicon.ico')));
     }
 
-    // Basic Auth AFTER CORS
-    app.use(basicHttpAuth);
-
-    // Static / Other Middleware
+    // Sync folders
     app.use('/sync_folders', function (req, res, next) {
         delete req.headers['cache-control'];
         delete req.headers['pragma'];
         fs.stat(path.join(config.syncDir, req.path), function (err, stat) {
             if (!err && stat.isDirectory()) {
-                res.setHeader('Last-Modified', (new Date()).toUTCString());
+                res.setHeader('Last-Modified', new Date().toUTCString());
             }
             next();
         });
@@ -140,29 +139,39 @@ module.exports = function (app) {
     app.use('/sync_folders', express.static(config.syncDir));
     app.use('/releases', express.static(config.releasesDir));
     app.use('/licenses', express.static(config.licenseDir));
-    app.use('/media', express.static(path.join(config.mediaDir)));
-    app.use(express.static(path.join(config.root, "public")));
+    app.use('/media', express.static(config.mediaDir));
+    app.use(express.static(path.join(config.root, 'public')));
 
-    app.set("view engine", "pug");
+    // Template engine
+    app.set('view engine', 'pug');
     app.locals.basedir = config.viewDir;
+    app.set('views', config.viewDir);
 
-    app.set("views", config.viewDir);
-
+    // Default middleware
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(methodOverride());
     app.use(cookieParser());
 
-    app.use(require("./routes"));
+    // App routes
+    app.use(require('./routes'));
 
+    // Error handler
     app.use(function (err, req, res, next) {
-        if (err.message.indexOf("not found") >= 0) return next();
-        if (err.message.indexOf("Range Not Satisfiable") >= 0) return res.send();
+        if (err.message.indexOf('not found') >= 0) {
+            return next();
+        }
+
+        if (err.message.indexOf('Range Not Satisfiable') >= 0) {
+            return res.send();
+        }
+
         console.error(err.stack);
-        res.status(500).render("500");
+        res.status(500).render('500');
     });
 
+    // 404 handler
     app.use(function (req, res, next) {
-        res.status(404).render("404", { url: req.originalUrl });
+        res.status(404).render('404', { url: req.originalUrl });
     });
 };
