@@ -8,7 +8,8 @@ var mongoose = require('mongoose'),
     fs = require('fs'),
     async = require('async'),
     util = require('util'),
-    path = require('path');
+    path = require('path'),
+    _ = require('lodash');
 
 var oldSocketio = require('./server-socket'),
     newSocketio = require('./server-socket-new'),
@@ -27,6 +28,8 @@ exports.saveSettings = function () {
 }
 
 exports.deploy = function (installation,group, cb) {
+    var bannedNames = [];
+    var defaultPlaylistAssets = [];
     async.series([
         function (async_cb) {
 
@@ -46,28 +49,70 @@ exports.deploy = function (installation,group, cb) {
                 }
             })
         },
-        function (async_cb) {  
-            Asset.find({'banned': true, 'name': {'$in': group.assets}},   
-                "name", function(err, bannedAssets) {  
-                    if (!err && bannedAssets && bannedAssets.length > 0) {  
-                        var bannedNames = bannedAssets.map(function(a) { return a.name; });  
-                        
-                        // Filter from group assets  
-                        group.assets = group.assets.filter(function(a) {   
-                            return bannedNames.indexOf(a) === -1;   
-                        });  
-                        
-                        // Filter from playlists  
-                        group.playlists.forEach(function(playlist) {  
-                            if (playlist.assets) {  
-                                playlist.assets = playlist.assets.filter(function(asset) {  
-                                    return bannedNames.indexOf(asset.filename) === -1;  
-                                });  
-                            }  
-                        });  
-                    }  
-                    async_cb();  
-                });  
+        function (async_cb) {
+            var defaultPlaylistPath = path.join(config.mediaDir, "__" + (config.defaultPlaylist || "default") + ".json");
+            
+            async.parallel([
+                function(cb) {
+                    Asset.find({'banned': true}, "name", function(err, bannedAssets) {
+                        if (!err && bannedAssets) {
+                            bannedNames = bannedAssets.map(function(a) { return a.name; });
+                        }
+                        cb(err);
+                    });
+                },
+                function(cb) {
+                    fs.readFile(defaultPlaylistPath, 'utf8', function(err, data) {
+                        if (!err && data) {
+                            try {
+                                var json = JSON.parse(data);
+                                if (json.assets) {
+                                    defaultPlaylistAssets = json.assets;
+                                }
+                            } catch(e) {
+                                console.log("Error parsing default playlist: " + e);
+                            }
+                        }
+                        cb();
+                    });
+                }
+            ], function(err) {
+                if (err) return async_cb(err);
+
+                // Filter banned assets from default playlist assets to be safe
+                if (bannedNames.length > 0) {
+                    defaultPlaylistAssets = defaultPlaylistAssets.filter(function(asset) {
+                        return bannedNames.indexOf(asset.filename) === -1;
+                    });
+                }
+
+                if (bannedNames.length > 0) {
+                    // Add default playlist files to group.assets so they get synced
+                    var defaultFiles = defaultPlaylistAssets.map(function(a) { return a.filename; });
+                    group.assets = _.union(group.assets, defaultFiles);
+
+                    // Filter banned assets from group.assets
+                    group.assets = group.assets.filter(function(a) {
+                        return bannedNames.indexOf(a) === -1;
+                    });
+                    
+                    // Replace banned assets in playlists with default playlist assets
+                    group.playlists.forEach(function(playlist) {
+                        if (playlist.assets) {
+                            var newAssets = [];
+                            playlist.assets.forEach(function(asset) {
+                                if (bannedNames.indexOf(asset.filename) !== -1) {
+                                    newAssets = newAssets.concat(defaultPlaylistAssets);
+                                } else {
+                                    newAssets.push(asset);
+                                }
+                            });
+                            playlist.assets = newAssets;
+                        }
+                    });
+                }
+                async_cb();
+            });
         },
         function (async_cb) {
             var syncPath = path.join(config.syncDir, installation, group.name),
@@ -94,6 +139,38 @@ exports.deploy = function (installation,group, cb) {
                                 //} else if (file.match(/^__.*\.json$/)) {     //uncomment this line and comment next line for symlinks
                                 } else if (true) {
                                     //copy the playlist files instead of symlink
+
+                                    if (path.basename(file).match(/^__.*\.json$/)) {
+                                        fs.readFile(srcfile, 'utf8', function(err, data) {
+                                            if (err) {
+                                                console.log("Error reading playlist file: " + err);
+                                                return iterative_cb();
+                                            }
+                                            try {
+                                                var json = JSON.parse(data);
+                                                if (json.assets && bannedNames.length > 0) {
+                                                    var newAssets = [];
+                                                    json.assets.forEach(function(asset) {
+                                                        if (bannedNames.indexOf(asset.filename) !== -1) {
+                                                            newAssets = newAssets.concat(defaultPlaylistAssets);
+                                                        } else {
+                                                            newAssets.push(asset);
+                                                        }
+                                                    });
+                                                    json.assets = newAssets;
+                                                }
+                                                fs.writeFile(dstfile, JSON.stringify(json, null, 4), function(err) {
+                                                    if (err) console.log("Error writing playlist file: " + err);
+                                                    iterative_cb();
+                                                });
+                                            } catch (e) {
+                                                console.log("Error parsing playlist file: " + e);
+                                                iterative_cb();
+                                            }
+                                        });
+                                        return;
+                                    }
+
                                     var cbCalled = false,
                                         done = function (err) {
                                             if (!cbCalled) {

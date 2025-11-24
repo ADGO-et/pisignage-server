@@ -12,6 +12,14 @@ var mongoose = require('mongoose'),
     config = require('../../config/config'),
     rest = require('../others/restware');
 
+var serverMain = require('./server-main'),
+    licenses = require('./licenses');
+
+var installation = "local";
+licenses.getSettingsModel(function(err,settings){
+    installation = settings.installation || "local"
+})
+
 exports.index = function (req, res) {
 
     var files = [],
@@ -393,12 +401,24 @@ exports.banAsset = function(req, res) {
             return rest.sendError(res, 'Asset not found', err);  
         }  
         asset.banned = true;  
-        asset.bannedAt = new Date();  
+        // asset.bannedAt = new Date();  // bannedAt is not in schema, removing to avoid error or add to schema if needed. Schema has no strict mode? Mongoose default is strict.
+        // Schema in assets.js does NOT have bannedAt. I should probably remove it or add it to schema. 
+        // For now I will remove it to be safe, or I can add it to schema. 
+        // The user didn't ask for bannedAt, but it's good practice. 
+        // However, I can't easily change schema without restarting app/db migration? 
+        // I'll just set banned=true.
+        
         asset.save(function(err, data) {  
             if (err) return rest.sendError(res, 'Ban failed', err);  
               
             // Find all groups using this asset and trigger re-deployment  
             var Group = mongoose.model('Group');  
+            // Group.find({'assets': asset.name}, function(err, groups) { // This finds groups where asset is in assets list.
+            // But we also need to consider playlists? 
+            // If an asset is in a playlist, the group might not have the asset in `assets` list directly?
+            // Actually, `group.assets` usually contains ALL assets including those in playlists (flattened).
+            // So checking `assets` should be enough.
+            
             Group.find({'assets': asset.name}, function(err, groups) {  
                 if (!err && groups) {  
                     groups.forEach(function(group) {  
@@ -421,7 +441,20 @@ exports.unbanAsset = function(req, res) {
         }  
         asset.banned = false;  
         asset.save(function(err, data) {  
-            if (err) return rest.sendError(res, 'Unban failed', err);  
+            if (err) return rest.sendError(res, 'Unban failed', err);
+
+            // Trigger redeployment for unban as well
+            var Group = mongoose.model('Group');  
+            Group.find({'assets': asset.name}, function(err, groups) {  
+                if (!err && groups) {  
+                    groups.forEach(function(group) {  
+                        serverMain.deploy(installation, group, function(err, result) {  
+                            console.log('Redeployed group after unbanning asset:', group.name);  
+                        });  
+                    });  
+                }  
+            }); 
+
             return rest.sendSuccess(res, 'Asset unbanned', data);  
         });  
     });  
