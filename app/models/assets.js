@@ -12,6 +12,7 @@ var AssetSchema = new Schema({
     labels: [],
     playlists:              [],
     validity:               {enable:Boolean, startdate:String,enddate:String,starthour:Number,endhour:Number},
+    banned: {type: Boolean, default: false},
     createdAt: {type: Date, default: Date.now},
     createdBy: {_id: {type: Schema.ObjectId, ref: 'User'}, name: String}
 }, {

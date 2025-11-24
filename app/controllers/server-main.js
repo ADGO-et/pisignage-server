@@ -46,6 +46,29 @@ exports.deploy = function (installation,group, cb) {
                 }
             })
         },
+        function (async_cb) {  
+            Asset.find({'banned': true, 'name': {'$in': group.assets}},   
+                "name", function(err, bannedAssets) {  
+                    if (!err && bannedAssets && bannedAssets.length > 0) {  
+                        var bannedNames = bannedAssets.map(function(a) { return a.name; });  
+                        
+                        // Filter from group assets  
+                        group.assets = group.assets.filter(function(a) {   
+                            return bannedNames.indexOf(a) === -1;   
+                        });  
+                        
+                        // Filter from playlists  
+                        group.playlists.forEach(function(playlist) {  
+                            if (playlist.assets) {  
+                                playlist.assets = playlist.assets.filter(function(asset) {  
+                                    return bannedNames.indexOf(asset.filename) === -1;  
+                                });  
+                            }  
+                        });  
+                    }  
+                    async_cb();  
+                });  
+        },
         function (async_cb) {
             var syncPath = path.join(config.syncDir, installation, group.name),
                 mediaPath = path.join(config.mediaDir);
@@ -176,7 +199,8 @@ exports.deploy = function (installation,group, cb) {
                     async_cb(err);
                 }
             )
-        },function(async_cb){ // send list of asset validity
+        },
+        function(async_cb){ // send list of asset validity
             Asset.find({'validity.enable':true,'name':{'$in':group.assets}},
                 "name validity",function (err, data) {
                     if (!err && data) {
@@ -191,7 +215,8 @@ exports.deploy = function (installation,group, cb) {
                     }
                     async_cb();
                 })
-        }], function (err, results) {
+        }], 
+        function (err, results) {
             group.deployedAssets = group.assets;
             group.deployedPlaylists = group.playlists;
             group.deployedTicker = group.ticker;
@@ -209,6 +234,7 @@ exports.deploy = function (installation,group, cb) {
             });
             console.log("sending sync event to players");
             cb(null, group);
-        }
+        },
+        
     );
 }

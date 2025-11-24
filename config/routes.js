@@ -33,6 +33,8 @@ router.post('/api/postupload', assets.updateFileDetails);
 router.post('/api/playlistfiles', assets.updatePlaylist);
 router.post('/api/files/:file', assets.updateAsset);
 router.delete('/api/files/:file', assets.deleteFile);
+router.post('/api/files/:file/ban', assets.banAsset);  
+router.post('/api/files/:file/unban', assets.unbanAsset);
 
 // router.get('/api/calendars/:file', assets.getCalendar);
 // router.post('/api/calendars/:file', assets.updateCalendar);

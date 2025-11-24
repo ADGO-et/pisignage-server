@@ -385,3 +385,44 @@ exports.updatePlaylist = function (req,res) {
     require('./server-assets').updatePlaylist(req.body.playlist, req.body.assets);
     return rest.sendSuccess(res, 'asset update has been queued');
 }
+
+
+exports.banAsset = function(req, res) {  
+    Asset.findOne({name: req.params['file']}, function(err, asset) {  
+        if (err || !asset) {  
+            return rest.sendError(res, 'Asset not found', err);  
+        }  
+        asset.banned = true;  
+        asset.bannedAt = new Date();  
+        asset.save(function(err, data) {  
+            if (err) return rest.sendError(res, 'Ban failed', err);  
+              
+            // Find all groups using this asset and trigger re-deployment  
+            var Group = mongoose.model('Group');  
+            Group.find({'assets': asset.name}, function(err, groups) {  
+                if (!err && groups) {  
+                    groups.forEach(function(group) {  
+                        serverMain.deploy(installation, group, function(err, result) {  
+                            console.log('Redeployed group after banning asset:', group.name);  
+                        });  
+                    });  
+                }  
+            });  
+              
+            return rest.sendSuccess(res, 'Asset banned and groups redeployed', data);  
+        });  
+    });  
+};  
+  
+exports.unbanAsset = function(req, res) {  
+    Asset.findOne({name: req.params['file']}, function(err, asset) {  
+        if (err || !asset) {  
+            return rest.sendError(res, 'Asset not found', err);  
+        }  
+        asset.banned = false;  
+        asset.save(function(err, data) {  
+            if (err) return rest.sendError(res, 'Unban failed', err);  
+            return rest.sendSuccess(res, 'Asset unbanned', data);  
+        });  
+    });  
+};
