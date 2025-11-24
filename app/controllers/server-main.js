@@ -102,7 +102,14 @@ exports.deploy = function (installation,group, cb) {
                             var newAssets = [];
                             playlist.assets.forEach(function(asset) {
                                 if (bannedNames.indexOf(asset.filename) !== -1) {
-                                    newAssets = newAssets.concat(defaultPlaylistAssets);
+                                    var replacements = defaultPlaylistAssets.map(function(da) {
+                                        var newDa = JSON.parse(JSON.stringify(da));
+                                        if (asset.duration && parseInt(asset.duration) > 0) {
+                                            newDa.duration = asset.duration;
+                                        }
+                                        return newDa;
+                                    });
+                                    newAssets = newAssets.concat(replacements);
                                 } else {
                                     newAssets.push(asset);
                                 }
@@ -152,7 +159,14 @@ exports.deploy = function (installation,group, cb) {
                                                     var newAssets = [];
                                                     json.assets.forEach(function(asset) {
                                                         if (bannedNames.indexOf(asset.filename) !== -1) {
-                                                            newAssets = newAssets.concat(defaultPlaylistAssets);
+                                                            var replacements = defaultPlaylistAssets.map(function(da) {
+                                                                var newDa = JSON.parse(JSON.stringify(da));
+                                                                if (asset.duration && parseInt(asset.duration) > 0) {
+                                                                    newDa.duration = asset.duration;
+                                                                }
+                                                                return newDa;
+                                                            });
+                                                            newAssets = newAssets.concat(replacements);
                                                         } else {
                                                             newAssets.push(asset);
                                                         }
