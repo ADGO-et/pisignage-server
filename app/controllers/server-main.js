@@ -57,34 +57,17 @@ exports.deploy = function (installation,group, cb) {
                     Asset.find({'banned': true}, "name", function(err, bannedAssets) {
                         if (!err && bannedAssets) {
                             bannedNames = bannedAssets.map(function(a) { return a.name; });
-                            console.log("Found " + bannedNames.length + " banned assets: " + bannedNames.join(", "));
-                        } else if (err) {
-                            console.log("Error finding banned assets: " + err);
                         }
                         cb(err);
                     });
                 },
                 function(cb) {
-                    console.log("config.mediaDir: " + config.mediaDir);
-                    fs.readdir(config.mediaDir, function(err, files) {
-                        if (!err && files) {
-                            var playlists = files.filter(function(f) { return f.match(/^__.*\.json$/); });
-                            console.log("Available playlists in " + config.mediaDir + ": " + playlists.join(", "));
-                        }
-                    });
-
-                    console.log("Loading default playlist from: " + defaultPlaylistPath);
                     fs.readFile(defaultPlaylistPath, 'utf8', function(err, data) {
-                        if (err) {
-                            console.log("Error reading default playlist: " + err);
-                        } else if (data) {
+                        if (!err && data) {
                             try {
                                 var json = JSON.parse(data);
                                 if (json.assets) {
                                     defaultPlaylistAssets = json.assets;
-                                    console.log("Loaded " + defaultPlaylistAssets.length + " assets from default playlist.");
-                                } else {
-                                    console.log("Default playlist has no assets.");
                                 }
                             } catch(e) {
                                 console.log("Error parsing default playlist: " + e);
@@ -96,12 +79,8 @@ exports.deploy = function (installation,group, cb) {
             ], function(err) {
                 if (err) return async_cb(err);
 
-                // Filter banned assets from default playlist assets to be safe
-                if (bannedNames.length > 0) {
-                    defaultPlaylistAssets = defaultPlaylistAssets.filter(function(asset) {
-                        return bannedNames.indexOf(asset.filename) === -1;
-                    });
-                }
+                // Removed filter for defaultPlaylistAssets to allow replacement even if default contains banned assets
+                // If default playlist contains banned assets, they will be included in replacement, which may cause issues, but user should avoid that.
 
                 if (bannedNames.length > 0) {
                     // Add default playlist files to group.assets so they get synced
