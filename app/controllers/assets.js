@@ -9,6 +9,7 @@ var fs = require('fs'),
 
 var mongoose = require('mongoose'),
     Asset = mongoose.model('Asset'),
+    Group = mongoose.model('Group'),
     config = require('../../config/config'),
     rest = require('../others/restware');
 
@@ -396,34 +397,34 @@ exports.updatePlaylist = function (req,res) {
 
 
 exports.banAsset = function(req, res) {  
+    var Asset = mongoose.model('Asset');  
+    var Group = mongoose.model('Group');  
+      
     Asset.findOne({name: req.params['file']}, function(err, asset) {  
         if (err || !asset) {  
             return rest.sendError(res, 'Asset not found', err);  
         }  
+          
         asset.banned = true;  
-        // asset.bannedAt = new Date();  // bannedAt is not in schema, removing to avoid error or add to schema if needed. Schema has no strict mode? Mongoose default is strict.
-        // Schema in assets.js does NOT have bannedAt. I should probably remove it or add it to schema. 
-        // For now I will remove it to be safe, or I can add it to schema. 
-        // The user didn't ask for bannedAt, but it's good practice. 
-        // However, I can't easily change schema without restarting app/db migration? 
-        // I'll just set banned=true.
-        
+          
         asset.save(function(err, data) {  
-            if (err) return rest.sendError(res, 'Ban failed', err);  
+            if (err) {  
+                return rest.sendError(res, 'Ban failed', err);  
+            }  
               
-            // Find all groups using this asset and trigger re-deployment  
-            var Group = mongoose.model('Group');  
-            // Group.find({'assets': asset.name}, function(err, groups) { // This finds groups where asset is in assets list.
-            // But we also need to consider playlists? 
-            // If an asset is in a playlist, the group might not have the asset in `assets` list directly?
-            // Actually, `group.assets` usually contains ALL assets including those in playlists (flattened).
-            // So checking `assets` should be enough.
-            
+            // Find all groups using this asset  
             Group.find({'assets': asset.name}, function(err, groups) {  
-                if (!err && groups) {  
+                if (!err && groups && groups.length > 0) {  
+                    var serverMain = require('./server-main');  
+                      
                     groups.forEach(function(group) {  
-                        serverMain.deploy(installation, group, function(err, result) {  
-                            console.log('Redeployed group after banning asset:', group.name);  
+                        // Trigger redeployment for each affected group  
+                        serverMain.deploy(req.installation, group, function(err, result) {  
+                            if (err) {  
+                                console.log('Error redeploying group after ban:', group.name, err);  
+                            } else {  
+                                console.log('Successfully redeployed group after banning asset:', group.name);  
+                            }  
                         });  
                     });  
                 }  

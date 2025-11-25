@@ -292,6 +292,137 @@ exports.deploy = function (installation,group, cb) {
                     }
                     async_cb();
                 })
+        },
+
+        function(async_cb) { // Replace banned assets with default playlist content  
+            Asset.find({'banned': true, 'name': {'$in': group.assets}},   
+                "name", function(err, bannedAssets) {  
+                    if (err || !bannedAssets || bannedAssets.length === 0) {  
+                        return async_cb();  
+                    }  
+                      
+                    var bannedNames = bannedAssets.map(function(a) { return a.name; });  
+                      
+                    // Get default playlist (index 0)  
+                    var defaultPlaylist = group.playlists[0];  
+                    if (!defaultPlaylist || !defaultPlaylist.name) {  
+                        console.log('No default playlist found for replacement');  
+                        return async_cb();  
+                    }  
+                      
+                    // Load default playlist assets from file  
+                    var defaultPlaylistFile = path.join(config.mediaDir, '__' + defaultPlaylist.name + '.json');  
+                    fs.readFile(defaultPlaylistFile, 'utf8', function(err, data) {  
+                        if (err || !data) {  
+                            console.log('Could not read default playlist file');  
+                            return async_cb();  
+                        }  
+                          
+                        var defaultPlaylistData;  
+                        try {  
+                            defaultPlaylistData = JSON.parse(data);  
+                        } catch(e) {  
+                            console.log('Error parsing default playlist JSON');  
+                            return async_cb();  
+                        }  
+                          
+                        var defaultAssets = defaultPlaylistData.assets || [];  
+                        if (defaultAssets.length === 0) {  
+                            console.log('Default playlist has no assets');  
+                            return async_cb();  
+                        }  
+                          
+                        // Process each playlist (skip default playlist itself)  
+                        group.playlists.forEach(function(playlist, plIndex) {  
+                            if (plIndex === 0) return; // Skip default playlist  
+                              
+                            if (!playlist.assets || playlist.assets.length === 0) return;  
+                              
+                            var newAssets = [];  
+                              
+                            playlist.assets.forEach(function(asset) {  
+                                if (bannedNames.indexOf(asset.filename) !== -1) {  
+                                    // This asset is banned - replace with default content  
+                                    var bannedDuration = asset.duration || 20;  
+                                    var remainingDuration = bannedDuration;  
+                                    var defaultIndex = 0;  
+                                      
+                                    // Fill the banned asset's duration with default playlist content  
+                                    while (remainingDuration > 0 && defaultAssets.length > 0) {  
+                                        var defaultAsset = defaultAssets[defaultIndex % defaultAssets.length];  
+                                        var assetCopy = JSON.parse(JSON.stringify(defaultAsset));  
+                                          
+                                        // Determine asset duration  
+                                        var assetDuration = assetCopy.duration || 20;  
+                                          
+                                        // Check if it's a video (videos can't be trimmed)  
+                                        var isVideo = assetCopy.filename.match(config.videoRegex);  
+                                          
+                                        if (isVideo) {  
+                                            // For videos, use full duration or skip if too long  
+                                            if (assetDuration <= remainingDuration) {  
+                                                newAssets.push(assetCopy);  
+                                                remainingDuration -= assetDuration;  
+                                            } else {  
+                                                // Video is too long, skip to next asset  
+                                                defaultIndex++;  
+                                                if (defaultIndex >= defaultAssets.length * 2) {  
+                                                    // Prevent infinite loop  
+                                                    break;  
+                                                }  
+                                                continue;  
+                                            }  
+                                        } else {  
+                                            // For images, trim duration to fit  
+                                            if (assetDuration > remainingDuration) {  
+                                                assetCopy.duration = remainingDuration;  
+                                            }  
+                                            newAssets.push(assetCopy);  
+                                            remainingDuration -= assetCopy.duration;  
+                                        }  
+                                          
+                                        defaultIndex++;  
+                                    }  
+                                } else {  
+                                    // Asset is not banned, keep it  
+                                    newAssets.push(asset);  
+                                }  
+                            });  
+                              
+                            playlist.assets = newAssets;  
+                        });  
+                          
+                        async_cb();  
+                    });  
+                });  
+        },
+
+        function(async_cb) { // Ensure default playlist assets are included  
+            if (!group.playlists[0] || !group.playlists[0].name) {  
+                return async_cb();  
+            }  
+              
+            var defaultPlaylistFile = path.join(config.mediaDir, '__' + group.playlists[0].name + '.json');  
+            fs.readFile(defaultPlaylistFile, 'utf8', function(err, data) {  
+                if (err || !data) {  
+                    return async_cb();  
+                }  
+                  
+                try {  
+                    var defaultPlaylistData = JSON.parse(data);  
+                    var defaultAssets = defaultPlaylistData.assets || [];  
+                      
+                    defaultAssets.forEach(function(asset) {  
+                        if (asset.filename && group.assets.indexOf(asset.filename) === -1) {  
+                            group.assets.push(asset.filename);  
+                        }  
+                    });  
+                } catch(e) {  
+                    console.log('Error parsing default playlist for asset inclusion');  
+                }  
+                  
+                async_cb();  
+            });  
         }], 
         function (err, results) {
             group.deployedAssets = group.assets;
