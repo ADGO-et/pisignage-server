@@ -122,6 +122,14 @@ angular.module('piPlaylists.controllers', [])
                 return ""
             }
         }
+
+        $scope.calculateTotalDuration = function() {  
+            if (!$scope.asset.showAssets || !$scope.asset.showAssets.assets) return 0;  
+            
+            return $scope.asset.showAssets.assets.reduce(function(sum, asset) {  
+                return sum + (asset.playlistDetails.duration || 20);  
+            }, 0);  
+        }
     })
 
 
@@ -463,6 +471,9 @@ angular.module('piPlaylists.controllers', [])
                     item.fullscreen = true;
                 if (item.duration < 2)
                     item.duration = 2; //force duration to 2 sec minimum
+
+                if (!item.duration > 20)
+                    item.duration = 20 // to enforce max duration of 20 sec
             });
             $http.post(piUrls.playlists + $scope.playlist.selectedPlaylist.name,
                 {assets: $scope.asset.groupWiseAssets[$scope.playlist.selectedPlaylist.name].playlist.assets})

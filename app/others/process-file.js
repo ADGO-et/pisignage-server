@@ -138,6 +138,16 @@ exports.processFile = function (filename, filesize, categories, cb) {
                                 }
                                 if (metadata) {
                                     duration = metadata.format.duration;
+                                    if (duration > 20){
+                                        errorMessages.push('Video duration exceeds limit of 20 seconds and cannot be uploaded');
+                                        fs.unlink(filePath, function (err) {
+                                            if (err) {
+                                                console.log('Error deleting long video: ',err);
+                                                // errorMessages.push(err.message);
+                                            }
+                                        });
+                                        return video_cb('Video duration exceeds limit of 20 seconds');
+                                    }
                                     if (metadata.format.size)
                                         mediaSize = parseInt(metadata.format.size / 1000) + 'KB';
 

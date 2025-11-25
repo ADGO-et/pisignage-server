@@ -142,6 +142,9 @@ angular.module('piAssets.services', [])
                 if (assetLoader.asset.filesDetails[filename])
                     obj.playlistDetails.duration = parseInt(assetLoader.asset.filesDetails[filename].duration);
                 obj.playlistDetails.duration = obj.playlistDetails.duration || $rootScope.serverConfig.defaultDuration;
+                if (obj.playlistDetails.duration > 20){
+                    obj.playlistDetails.duration = 20;
+                }
                 assetLoader.asset.allAssets.assets.push(obj)
                 //}
             })

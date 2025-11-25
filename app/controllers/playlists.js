@@ -90,44 +90,53 @@ exports.index = function (req, res) {
 
 }
 
-exports.getPlaylist = function (req, res) {
-
-    if (req.query['file'] == "TV_OFF")
-        return rest.sendError(res, 'System Playlist, can not be edited');
-
-    var file = path.join(config.mediaDir,  ("__" + req.params['file'] + '.json'));
-
-    fs.readFile(file, 'utf8', function (err, data) {
-        if (err) {
-            return rest.sendError(res, 'playlist file read error', err);
-        } else {
-            var playlist = {
-                settings: {},
-                layout: '1',
-                assets: [],
-                videoWindow: null,
-                zoneVideoWindow: {},
-                templateName: "custom_layout.html"
-            }
-            if (data) {
-                var obj = {};
-                try {
-                    obj = JSON.parse(data);
-                } catch (e) {
-                    console.log("getPlaylist parsing error for " + req.installation)
-                }
-                playlist.settings = obj.settings || {};
-                playlist.assets = obj.assets || [];
-                playlist.layout = obj.layout || '1';
-                playlist.templateName = obj.templateName || "custom_layout.html";
-                playlist.videoWindow = obj.videoWindow || null;
-                playlist.zoneVideoWindow = obj.zoneVideoWindow? obj.zoneVideoWindow : {};
-                playlist.schedule = obj.schedule || {};
-            }
-
-            return rest.sendSuccess(res, ' Sending playlist content', playlist);
-        }
-    });
+exports.getPlaylist = function (req, res) {  
+  
+    if (req.query['file'] == "TV_OFF")  
+        return rest.sendError(res, 'System Playlist, can not be edited');  
+  
+    var file = path.join(config.mediaDir,  ("__" + req.params['file'] + '.json'));  
+  
+    fs.readFile(file, 'utf8', function (err, data) {  
+        if (err) {  
+            return rest.sendError(res, 'playlist file read error', err);  
+        } else {  
+            var playlist = {  
+                settings: {},  
+                layout: '1',  
+                assets: [],  
+                videoWindow: null,  
+                zoneVideoWindow: {},  
+                templateName: "custom_layout.html"  
+            }  
+            if (data) {  
+                var obj = {};  
+                try {  
+                    obj = JSON.parse(data);  
+                } catch (e) {  
+                    console.log("getPlaylist parsing error for " + req.installation)  
+                }  
+                playlist.settings = obj.settings || {};  
+                playlist.assets = obj.assets || [];  
+                playlist.layout = obj.layout || '1';  
+                playlist.templateName = obj.templateName || "custom_layout.html";  
+                playlist.videoWindow = obj.videoWindow || null;  
+                playlist.zoneVideoWindow = obj.zoneVideoWindow? obj.zoneVideoWindow : {};  
+                playlist.schedule = obj.schedule || {};  
+                  
+                // NEW: Calculate total duration  
+                if (playlist.assets && playlist.assets.length > 0) {  
+                    playlist.totalDuration = playlist.assets.reduce(function(sum, asset) {  
+                        return sum + (asset.duration || 20);  
+                    }, 0);  
+                } else {  
+                    playlist.totalDuration = 0;  
+                }  
+            }  
+  
+            return rest.sendSuccess(res, ' Sending playlist content', playlist);  
+        }  
+    });  
 }
 
 exports.createPlaylist = function (req, res) {
