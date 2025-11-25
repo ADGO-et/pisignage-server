@@ -27,41 +27,8 @@ exports.getSettings = function () {
 exports.saveSettings = function () {
 }
 
-var getReplacementAssets = function(defaultAssets, targetDuration) {
-    var replacement = [];
-    var currentDuration = 0;
-    var index = 0;
-
-    if (!defaultAssets || defaultAssets.length === 0) {
-        return [];
-    }
-    
-    targetDuration = parseInt(targetDuration);
-    if (isNaN(targetDuration) || targetDuration <= 0) return [];
-
-    while (currentDuration < targetDuration) {
-        var asset = defaultAssets[index % defaultAssets.length];
-        var remaining = targetDuration - currentDuration;
-        var assetDuration = parseInt(asset.duration) || 10;
-
-        var newAsset = JSON.parse(JSON.stringify(asset));
-        
-        if (assetDuration <= remaining) {
-            newAsset.duration = assetDuration;
-            currentDuration += assetDuration;
-        } else {
-            newAsset.duration = remaining;
-            currentDuration += remaining;
-        }
-        replacement.push(newAsset);
-        index++;
-    }
-    return replacement;
-}
-
 exports.deploy = function (installation,group, cb) {
     var bannedNames = [];
-    var bannedAssetsMap = {};
     var defaultPlaylistAssets = [];
     async.series([
         function (async_cb) {
@@ -87,12 +54,9 @@ exports.deploy = function (installation,group, cb) {
             
             async.parallel([
                 function(cb) {
-                    Asset.find({'banned': true}, "name duration", function(err, bannedAssets) {
+                    Asset.find({'banned': true}, "name", function(err, bannedAssets) {
                         if (!err && bannedAssets) {
                             bannedNames = bannedAssets.map(function(a) { return a.name; });
-                            bannedAssets.forEach(function(a) {
-                                bannedAssetsMap[a.name] = a.duration;
-                            });
                         }
                         cb(err);
                     });
@@ -138,8 +102,7 @@ exports.deploy = function (installation,group, cb) {
                             var newAssets = [];
                             playlist.assets.forEach(function(asset) {
                                 if (bannedNames.indexOf(asset.filename) !== -1) {
-                                    var duration = asset.duration || bannedAssetsMap[asset.filename];
-                                    newAssets = newAssets.concat(getReplacementAssets(defaultPlaylistAssets, duration));
+                                    newAssets = newAssets.concat(defaultPlaylistAssets);
                                 } else {
                                     newAssets.push(asset);
                                 }
@@ -189,8 +152,7 @@ exports.deploy = function (installation,group, cb) {
                                                     var newAssets = [];
                                                     json.assets.forEach(function(asset) {
                                                         if (bannedNames.indexOf(asset.filename) !== -1) {
-                                                            var duration = asset.duration || bannedAssetsMap[asset.filename];
-                                                            newAssets = newAssets.concat(getReplacementAssets(defaultPlaylistAssets, duration));
+                                                            newAssets = newAssets.concat(defaultPlaylistAssets);
                                                         } else {
                                                             newAssets.push(asset);
                                                         }
