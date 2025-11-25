@@ -98,14 +98,15 @@ exports.deploy = function (installation,group, cb) {
                             var newAssets = [];
                             playlist.assets.forEach(function(asset) {
                                 if (bannedNames.indexOf(asset.filename) !== -1) {
-                                    var replacements = defaultPlaylistAssets.map(function(da) {
-                                        var newDa = JSON.parse(JSON.stringify(da));
+                                    if (defaultPlaylistAssets.length > 0) {
+                                        // Use the first asset of the default playlist to fill the slot
+                                        var replacement = JSON.parse(JSON.stringify(defaultPlaylistAssets[0]));
+                                        // Override duration to match the banned asset's slot duration
                                         if (asset.duration && parseInt(asset.duration) > 0) {
-                                            newDa.duration = asset.duration;
+                                            replacement.duration = asset.duration;
                                         }
-                                        return newDa;
-                                    });
-                                    newAssets = newAssets.concat(replacements);
+                                        newAssets.push(replacement);
+                                    }
                                 } else {
                                     newAssets.push(asset);
                                 }
@@ -155,14 +156,15 @@ exports.deploy = function (installation,group, cb) {
                                                     var newAssets = [];
                                                     json.assets.forEach(function(asset) {
                                                         if (bannedNames.indexOf(asset.filename) !== -1) {
-                                                            var replacements = defaultPlaylistAssets.map(function(da) {
-                                                                var newDa = JSON.parse(JSON.stringify(da));
+                                                            if (defaultPlaylistAssets.length > 0) {
+                                                                // Use the first asset of the default playlist to fill the slot
+                                                                var replacement = JSON.parse(JSON.stringify(defaultPlaylistAssets[0]));
+                                                                // Override duration to match the banned asset's slot duration
                                                                 if (asset.duration && parseInt(asset.duration) > 0) {
-                                                                    newDa.duration = asset.duration;
+                                                                    replacement.duration = asset.duration;
                                                                 }
-                                                                return newDa;
-                                                            });
-                                                            newAssets = newAssets.concat(replacements);
+                                                                newAssets.push(replacement);
+                                                            }
                                                         } else {
                                                             newAssets.push(asset);
                                                         }
