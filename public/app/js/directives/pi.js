@@ -150,7 +150,40 @@ directive('nodeimsFileUpload', ['fileUploader','piUrls', function(fileUploader, 
                             }
                         }
                         else{
-                            scope.upload();
+                            var videoFiles = scope.files.filter(function(f) { return f.type.indexOf('video') === 0; });
+                            if (videoFiles.length > 0) {
+                                var promises = videoFiles.map(function(file) {
+                                    return new Promise(function(resolve, reject) {
+                                        var video = document.createElement('video');
+                                        video.preload = 'metadata';
+                                        video.onloadedmetadata = function() {
+                                            window.URL.revokeObjectURL(video.src);
+                                            if (video.duration > 20) {
+                                                resolve({file: file, error: 'Duration ' + video.duration.toFixed(1) + 's exceeds 20s limit'});
+                                            } else {
+                                                resolve(null);
+                                            }
+                                        }
+                                        video.onerror = function() {
+                                            window.URL.revokeObjectURL(video.src);
+                                            resolve(null);
+                                        }
+                                        video.src = window.URL.createObjectURL(file);
+                                    });
+                                });
+                                
+                                Promise.all(promises).then(function(results) {
+                                    var errors = results.filter(function(r) { return r !== null; });
+                                    if (errors.length > 0) {
+                                        var msg = "Video duration exceeds 20 seconds limit: " + errors.map(function(e){ return e.file.name; }).join(', ');
+                                        raiseError(errors.map(function(e){ return e.file; }), 'DURATION_EXCEEDED', msg);
+                                        return;
+                                    }
+                                    scope.upload();
+                                });
+                            } else {
+                                scope.upload();
+                            }
                         }                        
                     } else {
                         scope.$apply(function() {

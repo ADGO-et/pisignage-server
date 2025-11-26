@@ -4,6 +4,9 @@
 </div>
 <div class="modal-body">
   <h4>{{msg.msg}}</h4>
+  <div class="alert alert-info" ng-if="msg.buttonText == 'Uploading'">
+    <small>If the file is a video, please ensure it is no longer than 20 seconds. Videos exceeding this duration will be rejected and will not be uploaded.</small>
+  </div>
   <div ng-if="msg.buttonText == 'Continue'">
     <hr/>
     <h5>Select Categories for the files</h5>

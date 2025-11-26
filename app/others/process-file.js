@@ -181,8 +181,8 @@ exports.processFile = function (filename, filesize, categories, cb) {
                                     filename: random+filename + '.png'
                                 }, config.thumbnailDir);
                         }
-                    ], function () {
-                        task_cb();
+                    ], function (err) {
+                        task_cb(err);
                     })
                 } else if (filename.match(config.audioRegex)) {
                     type = 'audio'
@@ -213,6 +213,7 @@ exports.processFile = function (filename, filesize, categories, cb) {
                 }
             }],
         function (err) {
+            if (err) return cb(err);
             Asset.findOne({name: filename}, function (err, data) {
                 var asset,
                     object = {
