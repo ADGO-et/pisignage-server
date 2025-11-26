@@ -28,10 +28,10 @@ exports.storeDetails = function (req, res) {
     async.eachSeries(files, function (fileObj, array_cb) {
         var filename = fileObj.name.replace(config.filenameRegex, '');
         processFile.processFile(filename, fileObj.size,  req.body.categories, array_cb)
-    }, function () {
+    }, function (err) {
         console.log("processed " + files.length + " files")
+        sendResponse(res, err);
     });
-    sendResponse(res);
 }
 
 exports.storeLinkDetails = function(name, type, categories, cb) {
