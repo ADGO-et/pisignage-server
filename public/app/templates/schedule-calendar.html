@@ -87,11 +87,11 @@
             </div>
           </div>
           <div class="col-xs-5">
-            <input class="form-control" type="time" ng-show="forPlaylist.settings.timeEnable" ng-model="forPlaylist.settings.starttimeObj" name="starttime" title="Enter Start Time"/>
+            <input class="form-control" type="time" pattern="[0-9]{2}:[0-9]{2}:[0-9]{2}" placeholder="HH:MM:SS" ng-show="forPlaylist.settings.timeEnable" ng-model="forPlaylist.settings.starttimeObj" name="starttime" title="Enter Start Time"/>
           </div>
           <div class="col-xs-1"><small ng-show="forPlaylist.settings.timeEnable">till</small></div>
           <div class="col-xs-4">
-            <input class="form-control" type="time" ng-show="forPlaylist.settings.timeEnable" ng-model="forPlaylist.settings.endtimeObj" name="endtime" title="Enter End Time"/>
+            <input class="form-control" type="time" pattern="[0-9]{2}:[0-9]{2}:[0-9]{2}" placeholder="HH:MM:SS" ng-show="forPlaylist.settings.timeEnable" ng-model="forPlaylist.settings.endtimeObj" name="endtime" title="Enter End Time"/>
           </div>
         </div>
       </div>

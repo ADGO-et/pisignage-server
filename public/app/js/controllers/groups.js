@@ -348,17 +348,19 @@ angular.module('piGroups.controllers', [])
                 // if ($scope.forPlaylist.settings.endtimeObj) {
                 //     $scope.forPlaylist.settings.endtimeObj = new Date($scope.forPlaylist.settings.endtimeObj)
                 // }
-                if ($scope.forPlaylist.settings.starttime) {
-                    $scope.forPlaylist.settings.starttimeObj = new Date(0)
-                    var t = getHoursMinutes($scope.forPlaylist.settings.starttime)
-                    $scope.forPlaylist.settings.starttimeObj.setHours(t.h)
-                    $scope.forPlaylist.settings.starttimeObj.setMinutes(t.m)
+                if ($scope.forPlaylist.settings.starttime) {  
+                    $scope.forPlaylist.settings.starttimeObj = new Date(0)  
+                    var t = getHoursMinutesSeconds($scope.forPlaylist.settings.starttime)  
+                    $scope.forPlaylist.settings.starttimeObj.setHours(t.h)  
+                    $scope.forPlaylist.settings.starttimeObj.setMinutes(t.m)  
+                    $scope.forPlaylist.settings.starttimeObj.setSeconds(t.s)  
                 }
                 if ($scope.forPlaylist.settings.endtime) {
                     $scope.forPlaylist.settings.endtimeObj = new Date(0)
-                    var t = getHoursMinutes($scope.forPlaylist.settings.endtime)
+                    var t = getHoursMinutesSeconds($scope.forPlaylist.settings.endtime)
                     $scope.forPlaylist.settings.endtimeObj.setHours(t.h)
                     $scope.forPlaylist.settings.endtimeObj.setMinutes(t.m)
+                    $scope.forPlaylist.settings.endtimeObj.setSeconds(t.s)
                 }
 
             }
@@ -387,17 +389,21 @@ angular.module('piGroups.controllers', [])
                     //     $scope.forPlaylist.settings.endtime = time;
                     // }
                     var minutes,hours;
-                    if ($scope.forPlaylist.settings.starttimeObj) {
-                        hours = $scope.forPlaylist.settings.starttimeObj.getHours()
-                        $scope.forPlaylist.settings.starttime = (hours < 10)?("0"+hours):(""+hours);
-                        minutes = $scope.forPlaylist.settings.starttimeObj.getMinutes();
-                        $scope.forPlaylist.settings.starttime += (minutes < 10)?(":0"+minutes):":"+minutes;
+                    if ($scope.forPlaylist.settings.starttimeObj) {  
+                        hours = $scope.forPlaylist.settings.starttimeObj.getHours()  
+                        $scope.forPlaylist.settings.starttime = (hours < 10)?("0"+hours):(""+hours);  
+                        minutes = $scope.forPlaylist.settings.starttimeObj.getMinutes();  
+                        $scope.forPlaylist.settings.starttime += (minutes < 10)?(":0"+minutes):":"+minutes;  
+                        seconds = $scope.forPlaylist.settings.starttimeObj.getSeconds();  
+                        $scope.forPlaylist.settings.starttime += (seconds < 10)?(":0"+seconds):":"+seconds;  
                     }
                     if ($scope.forPlaylist.settings.endtimeObj) {
                         hours = $scope.forPlaylist.settings.endtimeObj.getHours()
                         $scope.forPlaylist.settings.endtime = (hours < 10)?("0"+hours):(""+hours);
                         minutes = $scope.forPlaylist.settings.endtimeObj.getMinutes();
                         $scope.forPlaylist.settings.endtime += (minutes < 10)?(":0"+minutes):":"+minutes;
+                        seconds = $scope.forPlaylist.settings.endtimeObj.getSeconds();
+                        $scope.forPlaylist.settings.endtime += (seconds < 10)?(":0"+seconds):":"+seconds;
                     }
                 }
 
@@ -476,14 +482,14 @@ angular.module('piGroups.controllers', [])
             $scope.scheduleCalendarModal.close();
         }
 
-        function getHoursMinutes (timeString) {
-            var hhmmArray = timeString.split(':');
-            if (hhmmArray.length == 2)
-                return ({h:parseInt(hhmmArray[0]),m: parseInt(hhmmArray[1])});
-            else if (hhmmArray.length == 1)
-                return ({h:0,m: parseInt(hhmmArray[0])});
-            else if (hhmmArray.length > 2)
-                return ({h:parseInt(hhmmArray[hhmmArray.length -2]),m: parseInt(hhmmArray[hhmmArray.length -1])});
+        function getHoursMinutesSeconds (timeString) {  
+            var hhmmssArray = timeString.split(':');  
+            if (hhmmssArray.length == 3)  
+                return ({h:parseInt(hhmmssArray[0]), m: parseInt(hhmmssArray[1]), s: parseInt(hhmmssArray[2])});  
+            else if (hhmmssArray.length == 2)  
+                return ({h:parseInt(hhmmssArray[0]), m: parseInt(hhmmssArray[1]), s: 0});  
+            else if (hhmmssArray.length == 1)  
+                return ({h:0, m: parseInt(hhmmssArray[0]), s: 0});  
         }
         $scope.tempPopup;
 
