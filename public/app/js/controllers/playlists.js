@@ -126,9 +126,7 @@ angular.module('piPlaylists.controllers', [])
         $scope.calculateTotalDuration = function() {  
             if (!$scope.asset.showAssets || !$scope.asset.showAssets.assets) return 0;  
             
-            return $scope.asset.showAssets.assets.reduce(function(sum, asset) {  
-                return sum + (asset.playlistDetails.duration || 20);  
-            }, 0);  
+            // All assets are 20 seconds, so just multiply count by 20`r`n            return $scope.asset.showAssets.assets.length * 20;  
         }
     })
 
@@ -469,11 +467,7 @@ angular.module('piPlaylists.controllers', [])
                 //    item.fullscreen = true;
                 if (layoutOtherZones[$scope.asset.groupWiseAssets[$scope.playlist.selectedPlaylist.name].playlist.layout].length == 0)
                     item.fullscreen = true;
-                if (item.duration < 2)
-                    item.duration = 2; //force duration to 2 sec minimum
-
-                if (!item.duration > 20)
-                    item.duration = 20 // to enforce max duration of 20 sec
+                // Enforce fixed 20-second duration for all assets`r`n                item.duration = 20;
             });
             $http.post(piUrls.playlists + $scope.playlist.selectedPlaylist.name,
                 {assets: $scope.asset.groupWiseAssets[$scope.playlist.selectedPlaylist.name].playlist.assets})
