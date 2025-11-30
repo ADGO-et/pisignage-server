@@ -371,7 +371,10 @@ angular.module('piGroups.controllers', [])
                     if (data.success && data.data) {
                         // Get total duration in seconds
                         $scope.forPlaylist.totalDurationSeconds = data.data.totalDuration || 0;
-                        $scope.forPlaylist.totalDurationMinutes = Math.ceil($scope.forPlaylist.totalDurationSeconds / 60);
+                        // WORKAROUND: Divide by 1.5 to compensate for player-side bug
+                        // This ensures the displayed duration matches the actual scheduled duration
+                        var adjustedDuration = $scope.forPlaylist.totalDurationSeconds / 1.5;
+                        $scope.forPlaylist.totalDurationMinutes = Math.ceil(adjustedDuration / 60);
                     }
                 })
                 .error(function (data, status) {
@@ -507,8 +510,13 @@ angular.module('piGroups.controllers', [])
         function calculateEndTime(startTimeObj, totalDurationSeconds) {
             var endTime = new Date(startTimeObj);
 
+            // WORKAROUND: Divide by 1.5 to compensate for player-side 1.5x multiplier bug
+            // The player incorrectly multiplies the scheduled duration by 1.5
+            // So we divide here to ensure the actual playback duration is correct
+            var adjustedDurationSeconds = totalDurationSeconds / 1.5;
+
             // Round up to next minute
-            var durationMinutes = Math.ceil(totalDurationSeconds / 60);
+            var durationMinutes = Math.ceil(adjustedDurationSeconds / 60);
             endTime.setMinutes(endTime.getMinutes() + durationMinutes);
             endTime.setSeconds(0);  // Reset seconds to 0 for minute-based scheduling
 
