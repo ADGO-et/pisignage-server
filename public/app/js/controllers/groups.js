@@ -422,9 +422,15 @@ angular.module('piGroups.controllers', [])
                         // Seconds removed for minute-based scheduling
                     }
                     if ($scope.forPlaylist.settings.endtimeObj) {
-                        hours = $scope.forPlaylist.settings.endtimeObj.getHours()
+                        // WORKAROUND: Subtract 1 minute from endtime to compensate for player-side bug
+                        // The player adds 1 minute to the scheduled duration, so we reduce it here
+                        // This ensures the actual playback matches the UI-displayed duration
+                        var adjustedEndTime = new Date($scope.forPlaylist.settings.endtimeObj);
+                        adjustedEndTime.setMinutes(adjustedEndTime.getMinutes() - 1);
+
+                        hours = adjustedEndTime.getHours()
                         $scope.forPlaylist.settings.endtime = (hours < 10) ? ("0" + hours) : ("" + hours);
-                        minutes = $scope.forPlaylist.settings.endtimeObj.getMinutes();
+                        minutes = adjustedEndTime.getMinutes();
                         $scope.forPlaylist.settings.endtime += (minutes < 10) ? (":0" + minutes) : ":" + minutes;
                         // Seconds removed for minute-based scheduling
                     }
