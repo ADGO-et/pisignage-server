@@ -259,6 +259,20 @@ angular.module('piGroups.controllers', [])
 
         $scope.weekDaysText = {}
         $scope.monthDaysText = {}
+        $scope.getDisplayDate = function (timeStr, isEndTime) {
+            if (!timeStr) return null;
+            var date = new Date();
+            var t = getHoursMinutesSeconds(timeStr);
+            date.setHours(t.h);
+            date.setMinutes(t.m);
+            date.setSeconds(t.s);
+
+            if (isEndTime) {
+                date.setMinutes(date.getMinutes() + 1);
+            }
+            return date;
+        }
+
         $scope.showDates = function () {
             for (var i = 1, len = $scope.group.selectedGroup.playlists.length; i < len; i++) {
                 var playlist = $scope.group.selectedGroup.playlists[i]
