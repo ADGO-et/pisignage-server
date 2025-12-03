@@ -40,6 +40,9 @@ exports.purchaseSpots = function (req, res) {
             return rest.sendError(res, 'Advertiser not found', err);
         }
 
+        var totalSpots = purchaseData.sets * 40;
+        var pricePerSet = purchaseData.pricePerSet || 0;
+
         // Create spot purchase
         var purchase = new SpotPurchase({
             advertiser: {
@@ -48,7 +51,10 @@ exports.purchaseSpots = function (req, res) {
             },
             adAsset: purchaseData.adAsset,
             sets: purchaseData.sets,
-            pricePerSet: purchaseData.pricePerSet || 0,
+            totalSpots: totalSpots,
+            spotsRemaining: totalSpots,
+            pricePerSet: pricePerSet,
+            totalPrice: pricePerSet * purchaseData.sets,
             expirationDate: purchaseData.expirationDate,
             createdBy: purchaseData.createdBy
         });
@@ -59,8 +65,8 @@ exports.purchaseSpots = function (req, res) {
             }
 
             // Update advertiser's total spots
-            advertiser.totalSpotsPurchased += savedPurchase.totalSpots;
-            advertiser.totalSpotsRemaining += savedPurchase.spotsRemaining;
+            advertiser.totalSpotsPurchased = (advertiser.totalSpotsPurchased || 0) + savedPurchase.totalSpots;
+            advertiser.totalSpotsRemaining = (advertiser.totalSpotsRemaining || 0) + savedPurchase.spotsRemaining;
 
             advertiser.save(function (err) {
                 if (err) {

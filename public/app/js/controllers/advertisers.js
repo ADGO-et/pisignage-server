@@ -161,17 +161,27 @@ angular.module('piAdvertisers.controllers', [])
             if (!timeValue)
                 return '00:00';
 
+            function padTwoDigits(value) {
+                return (value < 10 ? '0' : '') + value;
+            }
+
             if (angular.isDate(timeValue)) {
-                var hours = timeValue.getHours();
-                var minutes = timeValue.getMinutes();
-                return (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes;
+                var hoursFromDate = timeValue.getHours();
+                var minutesFromDate = timeValue.getMinutes();
+                return padTwoDigits(hoursFromDate) + ':' + padTwoDigits(minutesFromDate);
             }
 
             if (typeof timeValue === 'string') {
                 // Input type="time" usually returns HH:MM[:SS]; trim seconds if present
                 var parts = timeValue.split(':');
                 if (parts.length >= 2) {
-                    return parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+                    var hours = parseInt(parts[0], 10);
+                    var minutes = parseInt(parts[1], 10);
+
+                    hours = isNaN(hours) ? 0 : Math.max(0, Math.min(23, hours));
+                    minutes = isNaN(minutes) ? 0 : Math.max(0, Math.min(59, minutes));
+
+                    return padTwoDigits(hours) + ':' + padTwoDigits(minutes);
                 }
             }
 
