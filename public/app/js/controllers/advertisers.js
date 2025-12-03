@@ -157,6 +157,27 @@ angular.module('piAdvertisers.controllers', [])
             $scope.advertiser.validTimeRange.weekdays = [];
         };
 
+        function normalizeTimeString(timeValue) {
+            if (!timeValue)
+                return '00:00';
+
+            if (angular.isDate(timeValue)) {
+                var hours = timeValue.getHours();
+                var minutes = timeValue.getMinutes();
+                return (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes;
+            }
+
+            if (typeof timeValue === 'string') {
+                // Input type="time" usually returns HH:MM[:SS]; trim seconds if present
+                var parts = timeValue.split(':');
+                if (parts.length >= 2) {
+                    return parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+                }
+            }
+
+            return '00:00';
+        }
+
         // Save advertiser
         $scope.saveAdvertiser = function () {
             if (!$scope.advertiser.name) {
@@ -170,6 +191,10 @@ angular.module('piAdvertisers.controllers', [])
             }
 
             $scope.loading = true;
+
+            // Ensure times are serialized as HH:MM strings
+            $scope.advertiser.validTimeRange.startTime = normalizeTimeString($scope.advertiser.validTimeRange.startTime);
+            $scope.advertiser.validTimeRange.endTime = normalizeTimeString($scope.advertiser.validTimeRange.endTime);
 
             var url = $scope.isEdit
                 ? piUrls.advertisers + $scope.advertiser._id
