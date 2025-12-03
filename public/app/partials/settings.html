@@ -146,6 +146,58 @@
   </div>
   <div class="panel panel-info">
     <div class="panel-heading">
+      <h4>Advertisement Time Window</h4>
+    </div>
+    <div class="panel-body">
+      <form class="form-horizontal" role="form" name="adTimeWindowForm">
+        <div class="alert alert-info">
+          <i class="glyphicon glyphicon-info-sign"></i>
+          <strong>Global Ad Display Hours:</strong> Configure when advertisements can be displayed across all groups.
+          When enabled, ads will only play during the specified time window. Outside this window, the default playlist will play.
+        </div>
+        <div class="form-group">
+          <div class="checkbox">
+            <label class="col-xs-8 col-xs-offset-4">
+              <input type="checkbox" name="adTimeWindowEnabled" ng-model="settings.adTimeWindow.enabled" ng-change="saveSettings()"/>
+              <span><strong>Enable Advertisement Time Window</strong></span>
+            </label>
+          </div>
+        </div>
+        <div class="form-group" ng-show="settings.adTimeWindow.enabled">
+          <label class="col-xs-4 control-label">Start Time (HH:MM)</label>
+          <div class="col-xs-2">
+            <input class="form-control" type="time" name="startTime" ng-model="settings.adTimeWindow.startTime" required/>
+          </div>
+          <div class="col-xs-6">
+            <p class="form-control-static text-muted">Ads will start displaying at this time</p>
+          </div>
+        </div>
+        <div class="form-group" ng-show="settings.adTimeWindow.enabled">
+          <label class="col-xs-4 control-label">End Time (HH:MM)</label>
+          <div class="col-xs-2">
+            <input class="form-control" type="time" name="endTime" ng-model="settings.adTimeWindow.endTime" required/>
+          </div>
+          <div class="col-xs-6">
+            <p class="form-control-static text-muted">Ads will stop displaying at this time</p>
+          </div>
+        </div>
+        <div class="form-group" ng-show="settings.adTimeWindow.enabled">
+          <div class="col-xs-8 col-xs-offset-4">
+            <button class="btn btn-success" type="submit" ng-click="saveSettings()" ng-disabled="adTimeWindowForm.$invalid">
+              <i class="glyphicon glyphicon-floppy-disk"></i> Save Time Window
+            </button>
+            <div class="alert alert-success" style="margin-top: 10px;" ng-show="settings.adTimeWindow.enabled && settings.adTimeWindow.startTime && settings.adTimeWindow.endTime">
+              <strong>Active Window:</strong> Advertisements will display from 
+              <strong>{{settings.adTimeWindow.startTime}}</strong> to 
+              <strong>{{settings.adTimeWindow.endTime}}</strong> daily.
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="panel panel-info">
+    <div class="panel-heading">
       <h4>Set Username and Password for Download Access</h4>
     </div>
     <div class="panel-body">

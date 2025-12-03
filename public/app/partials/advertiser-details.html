@@ -114,32 +114,14 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="startTime">Start Time (HH:MM) *</label>
-                                    <input type="time" class="form-control" id="startTime"
-                                        ng-model="advertiser.validTimeRange.startTime" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="endTime">End Time (HH:MM) *</label>
-                                    <input type="time" class="form-control" id="endTime"
-                                        ng-model="advertiser.validTimeRange.endTime" required>
-                                </div>
-                            </div>
-                        </div>
-
                         <div class="alert alert-info">
                             <i class="glyphicon glyphicon-info-sign"></i>
                             <strong>Preview:</strong> Ads will be eligible to play on
                             <strong>{{advertiser.validTimeRange.weekdays.length === 7 ? 'all days' :
                                 advertiser.validTimeRange.weekdays.length + ' selected days'}}</strong>
                             from <strong>{{advertiser.validTimeRange.startDate | date:'mediumDate'}}</strong> to
-                            <strong>{{advertiser.validTimeRange.endDate | date:'mediumDate'}}</strong>,
-                            between <strong>{{advertiser.validTimeRange.startTime}}</strong> and
-                            <strong>{{advertiser.validTimeRange.endTime}}</strong>.
+                            <strong>{{advertiser.validTimeRange.endDate | date:'mediumDate'}}</strong>.
+                            <br><small class="text-muted">Note: Display times are controlled by system settings.</small>
                         </div>
                     </div>
                 </div>

@@ -13,11 +13,7 @@ var AdvertiserSchema = new Schema({
 
         // Date range
         startDate: { type: Date, required: true },
-        endDate: { type: Date, required: true },
-
-        // Time range per day (HH:MM format)
-        startTime: { type: String, required: true, default: '00:00' },
-        endTime: { type: String, required: true, default: '23:59' }
+        endDate: { type: Date, required: true }
     },
 
     // Spot tracking

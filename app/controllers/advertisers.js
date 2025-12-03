@@ -193,17 +193,6 @@ function validateTimeRange(timeRange) {
         }
     }
 
-    // Validate time format (HH:MM)
-    var timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-
-    if (timeRange.startTime && !timeRegex.test(timeRange.startTime)) {
-        return { valid: false, error: 'Start time must be in HH:MM format (00:00 to 23:59)' };
-    }
-
-    if (timeRange.endTime && !timeRegex.test(timeRange.endTime)) {
-        return { valid: false, error: 'End time must be in HH:MM format (00:00 to 23:59)' };
-    }
-
     return { valid: true };
 }
 

@@ -4,6 +4,7 @@ var mongoose = require('mongoose'),
     Advertiser = mongoose.model('Advertiser'),
     SpotPurchase = mongoose.model('SpotPurchase'),
     Group = mongoose.model('Group'),
+    Settings = mongoose.model('Settings'),
     fs = require('fs'),
     path = require('path'),
     config = require('../../config/config'),
@@ -17,7 +18,7 @@ var spotPurchases = require('./spot-purchases');
  * This is the main entry point for playlist generation
  */
 exports.generateAdSchedule = function (groupId, callback) {
-    var group, advertisers, defaultPlaylist;
+    var group, advertisers, defaultPlaylist, systemSettings;
 
     async.series([
         // Step 1: Load the group
@@ -40,7 +41,18 @@ exports.generateAdSchedule = function (groupId, callback) {
             });
         },
 
-        // Step 3: Load default playlist
+        // Step 3: Load system settings for ad time window
+        function (cb) {
+            Settings.findOne({}, function (err, settings) {
+                if (err) {
+                    console.log('Error loading settings:', err);
+                }
+                systemSettings = settings || {};
+                cb(); // Don't fail if settings don't exist
+            });
+        },
+
+        // Step 4: Load default playlist
         function (cb) {
             var defaultPlaylistPath = path.join(config.mediaDir, '__' + (config.defaultPlaylist || 'default') + '.json');
             fs.readFile(defaultPlaylistPath, 'utf8', function (err, data) {
@@ -58,14 +70,14 @@ exports.generateAdSchedule = function (groupId, callback) {
             });
         },
 
-        // Step 4: Generate playlists
+        // Step 5: Generate playlists
         function (cb) {
             if (advertisers.length === 0) {
                 console.log('No active advertisers, skipping ad playlist generation');
                 return cb();
             }
 
-            generatePlaylistsForAdvertisers(group, advertisers, defaultPlaylist, cb);
+            generatePlaylistsForAdvertisers(group, advertisers, defaultPlaylist, systemSettings, cb);
         }
 
     ], function (err) {
@@ -82,7 +94,7 @@ exports.generateAdSchedule = function (groupId, callback) {
 /**
  * Generate playlists for all advertisers
  */
-function generatePlaylistsForAdvertisers(group, advertisers, defaultPlaylist, callback) {
+function generatePlaylistsForAdvertisers(group, advertisers, defaultPlaylist, systemSettings, callback) {
     var allPurchases = [];
 
     // Collect all active spot purchases for all advertisers
@@ -107,14 +119,14 @@ function generatePlaylistsForAdvertisers(group, advertisers, defaultPlaylist, ca
         }
 
         // Build weighted queue and generate playlists
-        buildAndDeployPlaylists(group, allPurchases, defaultPlaylist, callback);
+        buildAndDeployPlaylists(group, allPurchases, defaultPlaylist, systemSettings, callback);
     });
 }
 
 /**
  * Build weighted queue and create playlist files
  */
-function buildAndDeployPlaylists(group, allPurchases, defaultPlaylist, callback) {
+function buildAndDeployPlaylists(group, allPurchases, defaultPlaylist, systemSettings, callback) {
     // Calculate total spots across all purchases
     var totalAdSpots = allPurchases.reduce(function (sum, item) {
         return sum + item.purchase.spotsRemaining;
@@ -138,8 +150,8 @@ function buildAndDeployPlaylists(group, allPurchases, defaultPlaylist, callback)
 
         console.log('Ad schedule playlist saved:', playlistPath);
 
-        // Add this playlist to the group's playlists
-        addAdPlaylistToGroup(group, combinedPlaylist.name, callback);
+        // Add this playlist to the group's playlists with system time window
+        addAdPlaylistToGroup(group, combinedPlaylist.name, systemSettings, callback);
     });
 }
 
@@ -285,7 +297,7 @@ function createCombinedPlaylist(group, queue) {
 /**
  * Add the ad playlist to the group's playlists
  */
-function addAdPlaylistToGroup(group, playlistName, callback) {
+function addAdPlaylistToGroup(group, playlistName, systemSettings, callback) {
     // Check if ad playlist already exists in group
     var existingIndex = -1;
     for (var i = 0; i < group.playlists.length; i++) {
@@ -295,15 +307,23 @@ function addAdPlaylistToGroup(group, playlistName, callback) {
         }
     }
 
-    // Create playlist entry with schedule covering all advertiser time ranges
+    // Get system ad time window settings
+    var adTimeWindow = systemSettings.adTimeWindow || {};
+    var timeEnabled = adTimeWindow.enabled || false;
+    var startTime = adTimeWindow.startTime || '00:00';
+    var endTime = adTimeWindow.endTime || '23:59';
+
+    console.log('System ad time window:', timeEnabled ? (startTime + ' - ' + endTime) : 'Disabled (24/7)');
+
+    // Create playlist entry with system time window schedule
     var playlistEntry = {
         name: playlistName,
         settings: {
             durationEnable: false,
-            timeEnable: true,
+            timeEnable: timeEnabled,
             weekdays: [1, 2, 3, 4, 5, 6, 7], // All days
-            starttime: '00:00',
-            endtime: '23:59'
+            starttime: timeEnabled ? startTime : '00:00',
+            endtime: timeEnabled ? endTime : '23:59'
         }
     };
 

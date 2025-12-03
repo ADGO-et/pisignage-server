@@ -89,9 +89,7 @@ angular.module('piAdvertisers.controllers', [])
             validTimeRange: {
                 weekdays: [1, 2, 3, 4, 5, 6, 7],
                 startDate: new Date(),
-                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-                startTime: '00:00',
-                endTime: '23:59'
+                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
             },
             active: true
         };
@@ -127,7 +125,7 @@ angular.module('piAdvertisers.controllers', [])
                 .error(function (data) {
                     console.log('Error loading advertiser:', data);
                     $scope.loading = false;
-                        $state.go('home.advertisers.list');
+                    $state.go('home.advertisers.list');
                 });
         }
 
@@ -157,36 +155,7 @@ angular.module('piAdvertisers.controllers', [])
             $scope.advertiser.validTimeRange.weekdays = [];
         };
 
-        function normalizeTimeString(timeValue) {
-            if (!timeValue)
-                return '00:00';
 
-            function padTwoDigits(value) {
-                return (value < 10 ? '0' : '') + value;
-            }
-
-            if (angular.isDate(timeValue)) {
-                var hoursFromDate = timeValue.getHours();
-                var minutesFromDate = timeValue.getMinutes();
-                return padTwoDigits(hoursFromDate) + ':' + padTwoDigits(minutesFromDate);
-            }
-
-            if (typeof timeValue === 'string') {
-                // Input type="time" usually returns HH:MM[:SS]; trim seconds if present
-                var parts = timeValue.split(':');
-                if (parts.length >= 2) {
-                    var hours = parseInt(parts[0], 10);
-                    var minutes = parseInt(parts[1], 10);
-
-                    hours = isNaN(hours) ? 0 : Math.max(0, Math.min(23, hours));
-                    minutes = isNaN(minutes) ? 0 : Math.max(0, Math.min(59, minutes));
-
-                    return padTwoDigits(hours) + ':' + padTwoDigits(minutes);
-                }
-            }
-
-            return '00:00';
-        }
 
         // Save advertiser
         $scope.saveAdvertiser = function () {
@@ -202,10 +171,6 @@ angular.module('piAdvertisers.controllers', [])
 
             $scope.loading = true;
 
-            // Ensure times are serialized as HH:MM strings
-            $scope.advertiser.validTimeRange.startTime = normalizeTimeString($scope.advertiser.validTimeRange.startTime);
-            $scope.advertiser.validTimeRange.endTime = normalizeTimeString($scope.advertiser.validTimeRange.endTime);
-
             var url = $scope.isEdit
                 ? piUrls.advertisers + $scope.advertiser._id
                 : piUrls.advertisers;
@@ -217,7 +182,7 @@ angular.module('piAdvertisers.controllers', [])
                             msg: $scope.isEdit ? 'Advertiser updated successfully' : 'Advertiser created successfully',
                             title: 'Success'
                         });
-                            $state.go('home.advertisers.list');
+                        $state.go('home.advertisers.list');
                     } else {
                         piPopup.status({ msg: data.stat_message || 'Error saving advertiser', title: 'Error' });
                     }
@@ -231,6 +196,6 @@ angular.module('piAdvertisers.controllers', [])
 
         // Cancel
         $scope.cancel = function () {
-                $state.go('home.advertisers.list');
+            $state.go('home.advertisers.list');
         };
     });
