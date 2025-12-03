@@ -24,6 +24,9 @@ angular.module('piConfig', [])
             settings:        base + 'api/settings/',
             serverConfig:    base + 'api/serverconfig/',
 
+            advertisers:     base + 'api/advertisers/',
+            spotPurchases:   base + 'api/spot-purchases/',
+
             playlists:       base + 'api/playlists/',
 
             groups:          base + 'api/groups/',

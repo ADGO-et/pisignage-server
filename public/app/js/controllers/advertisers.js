@@ -11,7 +11,7 @@ angular.module('piAdvertisers.controllers', [])
         // Load advertisers
         $scope.loadAdvertisers = function () {
             $scope.loading = true;
-            $http.get(piUrls.base + 'advertisers')
+            $http.get(piUrls.advertisers)
                 .success(function (data) {
                     if (data.success) {
                         $scope.advertisers = data.data;
@@ -37,7 +37,7 @@ angular.module('piAdvertisers.controllers', [])
         // Delete advertiser
         $scope.deleteAdvertiser = function (advertiser) {
             piPopup.confirm(advertiser.name + ' Advertiser', function () {
-                $http.delete(piUrls.base + 'advertisers/' + advertiser._id)
+                $http.delete(piUrls.advertisers + advertiser._id)
                     .success(function (data) {
                         if (data.success) {
                             $scope.loadAdvertisers();
@@ -114,7 +114,7 @@ angular.module('piAdvertisers.controllers', [])
         if ($stateParams.id) {
             $scope.isEdit = true;
             $scope.loading = true;
-            $http.get(piUrls.base + 'advertisers/' + $stateParams.id)
+            $http.get(piUrls.advertisers + $stateParams.id)
                 .success(function (data) {
                     if (data.success) {
                         $scope.advertiser = data.data;
@@ -172,8 +172,8 @@ angular.module('piAdvertisers.controllers', [])
             $scope.loading = true;
 
             var url = $scope.isEdit
-                ? piUrls.base + 'advertisers/' + $scope.advertiser._id
-                : piUrls.base + 'advertisers';
+                ? piUrls.advertisers + $scope.advertiser._id
+                : piUrls.advertisers;
 
             $http.post(url, $scope.advertiser)
                 .success(function (data) {

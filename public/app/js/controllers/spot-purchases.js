@@ -22,7 +22,7 @@ angular.module('piSpotPurchases.controllers', [])
 
         // Load advertisers
         $scope.loadAdvertisers = function () {
-            $http.get(piUrls.base + 'advertisers')
+            $http.get(piUrls.advertisers)
                 .success(function (data) {
                     if (data.success) {
                         $scope.advertisers = data.data.filter(function (adv) {
@@ -81,7 +81,7 @@ angular.module('piSpotPurchases.controllers', [])
         $scope.loadAdvertiserPurchases = function () {
             if (!$scope.purchase.advertiserId) return;
 
-            $http.get(piUrls.base + 'spot-purchases/advertiser/' + $scope.purchase.advertiserId)
+            $http.get(piUrls.spotPurchases + 'advertiser/' + $scope.purchase.advertiserId)
                 .success(function (data) {
                     if (data.success) {
                         $scope.purchases = data.data;
@@ -111,7 +111,7 @@ angular.module('piSpotPurchases.controllers', [])
 
             $scope.loading = true;
 
-            $http.post(piUrls.base + 'spot-purchases', $scope.purchase)
+            $http.post(piUrls.spotPurchases, $scope.purchase)
                 .success(function (data) {
                     if (data.success) {
                         piPopup.status({
