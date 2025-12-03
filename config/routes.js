@@ -5,7 +5,7 @@ var express = require('express'),
 
 var multer = require('multer'),
     config = require('./config'),
-    upload = multer({dest:config.uploadDir})
+    upload = multer({ dest: config.uploadDir })
 
 var assets = require('../app/controllers/assets'),
     playlists = require('../app/controllers/playlists'),
@@ -13,8 +13,11 @@ var assets = require('../app/controllers/assets'),
     groups = require('../app/controllers/groups'),
     labels = require('../app/controllers/labels'),
     rssFeed = require('../app/controllers/rss-feed'),
-    licenses  = require('../app/controllers/licenses');
-    //gcalAuthorize = require('../app/controllers/gcal-authorize');
+    licenses = require('../app/controllers/licenses'),
+    advertisers = require('../app/controllers/advertisers'),
+    spotPurchases = require('../app/controllers/spot-purchases'),
+    playlistGenerator = require('../app/controllers/playlist-generator');
+//gcalAuthorize = require('../app/controllers/gcal-authorize');
 
 /**
  * Application routes
@@ -28,12 +31,12 @@ var assets = require('../app/controllers/assets'),
 
 router.get('/api/files', assets.index);
 router.get('/api/files/:file', assets.getFileDetails);
-router.post('/api/files', upload.fields([{name:'assets',maxCount: 10}]), assets.createFiles);
+router.post('/api/files', upload.fields([{ name: 'assets', maxCount: 10 }]), assets.createFiles);
 router.post('/api/postupload', assets.updateFileDetails);
 router.post('/api/playlistfiles', assets.updatePlaylist);
 router.post('/api/files/:file', assets.updateAsset);
 router.delete('/api/files/:file', assets.deleteFile);
-router.post('/api/files/:file/ban', assets.banAsset);  
+router.post('/api/files/:file/ban', assets.banAsset);
 router.post('/api/files/:file/unban', assets.unbanAsset);
 
 // router.get('/api/calendars/:file', assets.getCalendar);
@@ -64,12 +67,12 @@ router.post('/api/players/:playerid', players.updateObject)
 router.delete('/api/players/:playerid', players.deleteObject)
 
 router.post('/api/pishell/:playerid', players.shell)
-router.post('/api/snapshot/:playerid',players.takeSnapshot)
+router.post('/api/snapshot/:playerid', players.takeSnapshot)
 router.post('/api/swupdate/:playerid', players.swupdate)
-router.post('/api/pitv/:playerid',players.tvPower);
+router.post('/api/pitv/:playerid', players.tvPower);
 
-router.post('/api/playlistmedia/:playerid/:action',  players.playlistMedia);
-router.post('/api/setplaylist/:playerid/:playlist',  players.setPlaylist);
+router.post('/api/playlistmedia/:playerid/:action', players.playlistMedia);
+router.post('/api/setplaylist/:playerid/:playlist', players.setPlaylist);
 
 router.param('playerid', players.loadObject)
 
@@ -80,19 +83,37 @@ router.post('/api/labels/:label', labels.updateObject);
 router.delete('/api/labels/:label', labels.deleteObject);
 router.get('/api/rssfeed', rssFeed.getFeeds);
 
-require('../app/controllers/licenses').getSettingsModel(function(err,settings){
-    var uploadLicense = multer({dest:(config.licenseDirPath+(settings.installation || "local"))})
-    router.post('/api/licensefiles',uploadLicense.fields([{name:'assets',maxCount: 10}]),licenses.saveLicense);
+require('../app/controllers/licenses').getSettingsModel(function (err, settings) {
+    var uploadLicense = multer({ dest: (config.licenseDirPath + (settings.installation || "local")) })
+    router.post('/api/licensefiles', uploadLicense.fields([{ name: 'assets', maxCount: 10 }]), licenses.saveLicense);
 })
-router.get('/api/licensefiles',licenses.index);
-router.delete('/api/licensefiles/:filename',licenses.deleteLicense)
+router.get('/api/licensefiles', licenses.index);
+router.delete('/api/licensefiles/:filename', licenses.deleteLicense)
 
-router.get('/api/settings',licenses.getSettings)
-router.post('/api/settings',licenses.updateSettings)
+router.get('/api/settings', licenses.getSettings)
+router.post('/api/settings', licenses.updateSettings)
 
-router.get('/api/serverconfig',licenses.getSettings);
+router.get('/api/serverconfig', licenses.getSettings);
+
+// Advertiser routes
+router.get('/api/advertisers', advertisers.index);
+router.get('/api/advertisers/active', advertisers.getActiveAdvertisers);
+router.get('/api/advertisers/:advertiserid', advertisers.getObject);
+router.post('/api/advertisers', advertisers.createObject);
+router.post('/api/advertisers/:advertiserid', advertisers.updateObject);
+router.delete('/api/advertisers/:advertiserid', advertisers.deleteObject);
+
+router.param('advertiserid', advertisers.loadObject);
+
+// Spot purchase routes
+router.get('/api/spot-purchases', spotPurchases.index);
+router.post('/api/spot-purchases', spotPurchases.purchaseSpots);
+router.get('/api/spot-purchases/advertiser/:advertiserId', spotPurchases.getAdvertiserPurchases);
+router.get('/api/spot-purchases/remaining/:advertiserId', spotPurchases.getRemainingSpots);
+
+// Playlist generation route
+router.post('/api/playlists/regenerate/:groupId', playlistGenerator.regenerateForGroup);
 
 router.param('label', labels.loadObject)
 
 module.exports = router;
-

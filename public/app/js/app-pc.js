@@ -16,6 +16,8 @@ angular.module('piServerApp', [
     'piSettings.controllers',
     'piPlaylists.controllers',
     'piLabels.controllers',
+    'piAdvertisers.controllers',      
+    'piSpotPurchases.controllers', 
     'pisignage.directives',
     'pisignage.filters',
     'pisignage.services'
@@ -175,6 +177,41 @@ angular.module('piServerApp', [
                     showAllAssets: true
                 }
             })
+
+            .state("home.advertisers", {
+                abstract: true,
+                url: "advertisers/",
+                views: {
+                    "main": {
+                        template: '<div ui-view></div>'
+                    }
+                }
+            })
+            .state("home.advertisers.list", {
+                url: "list",
+                templateUrl: '/app/partials/advertisers.html',
+                controller: 'AdvertisersCtrl'
+            })
+            .state("home.advertisers.new", {
+                url: "new",
+                templateUrl: '/app/partials/advertiser-details.html',
+                controller: 'AdvertiserDetailCtrl'
+            })
+            .state("home.advertisers.edit", {
+                url: "edit/:id",
+                templateUrl: '/app/partials/advertiser-details.html',
+                controller: 'AdvertiserDetailCtrl'
+            })
+            .state("home.spotpurchase", {
+                url: "spot-purchase",
+                views: {
+                    "main": {
+                        templateUrl: '/app/partials/spot-purchase.html',
+                        controller: 'SpotPurchasesCtrl'
+                    }
+                }
+            })
+
 
             .state("home.settings",{
                 url: "settings",

@@ -233,6 +233,24 @@ angular.module('piGroups.controllers', [])
             })
         }
 
+        $scope.updateAdSchedule = function () {
+            $http.post('/api/playlists/regenerate/' + $scope.group.selectedGroup._id)
+                .success(function (data) {
+                    if (data.success) {
+                        piPopup.status({ msg: "Ad schedule updated successfully. Please deploy to apply changes.", title: "Success" });
+                        // Reload group to see the new playlist
+                        // We can call initSortArray via the observer or directly if needed, 
+                        // but let's just trigger a reload of the group data
+                        playerLoader.selectGroup($scope.group.selectedGroup);
+                    } else {
+                        piPopup.status({ msg: "Failed to update ad schedule: " + data.message, title: "Error" });
+                    }
+                })
+                .error(function (err) {
+                    piPopup.status({ msg: "Error updating ad schedule", title: "Error" });
+                });
+        }
+
         $scope.add = function () {
             if ($scope.group.selectedGroup.playlists.length >= 100) {
                 $timeout(function () {

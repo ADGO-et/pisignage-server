@@ -1,0 +1,148 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Spot Purchase</h2>
+            <p class="text-muted">Purchase advertising spots for your campaigns (1 set = 40 spots, 1 spot = 20 seconds)
+            </p>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4>Purchase Spots</h4>
+                        </div>
+                        <div class="panel-body">
+                            <form name="purchaseForm" ng-submit="purchaseSpots()" novalidate>
+                                <div class="form-group">
+                                    <label for="advertiser">Select Advertiser *</label>
+                                    <select class="form-control" id="advertiser" ng-model="purchase.advertiserId"
+                                        ng-change="onAdvertiserSelected()" required>
+                                        <option value="">-- Select Advertiser --</option>
+                                        <option ng-repeat="adv in advertisers" value="{{adv._id}}">
+                                            {{adv.name}} ({{adv.totalSpotsRemaining || 0}} spots remaining)
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div ng-if="selectedAdvertiser" class="alert alert-info">
+                                    <strong>Valid Time Range:</strong><br>
+                                    Days: <strong>{{selectedAdvertiser.validTimeRange.weekdays.length === 7 ? 'All days'
+                                        : selectedAdvertiser.validTimeRange.weekdays.length + ' selected
+                                        days'}}</strong><br>
+                                    Dates: <strong>{{formatDate(selectedAdvertiser.validTimeRange.startDate)}} -
+                                        {{formatDate(selectedAdvertiser.validTimeRange.endDate)}}</strong><br>
+                                    Time: <strong>{{selectedAdvertiser.validTimeRange.startTime}} -
+                                        {{selectedAdvertiser.validTimeRange.endTime}}</strong>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="adAsset">Select Ad Asset (Video) *</label>
+                                    <select class="form-control" id="adAsset" ng-model="purchase.adAsset.filename"
+                                        required>
+                                        <option value="">-- Select Video Asset --</option>
+                                        <option ng-repeat="asset in assets" value="{{asset}}">
+                                            {{asset}}
+                                        </option>
+                                    </select>
+                                    <p class="help-block">
+                                        <i class="glyphicon glyphicon-info-sign"></i>
+                                        Only video assets are shown. Ad duration must be exactly 20 seconds.
+                                    </p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="sets">Number of Sets *</label>
+                                    <input type="number" class="form-control" id="sets" ng-model="purchase.sets" min="1"
+                                        required>
+                                    <p class="help-block">
+                                        1 set = 40 spots. You are purchasing <strong>{{calculateTotalSpots()}}
+                                            spots</strong>
+                                        ({{calculateTotalSpots() * 20}} seconds of ad time).
+                                    </p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="pricePerSet">Price per Set (Optional)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-addon">$</span>
+                                        <input type="number" class="form-control" id="pricePerSet"
+                                            ng-model="purchase.pricePerSet" min="0" step="0.01">
+                                    </div>
+                                    <p class="help-block" ng-if="purchase.pricePerSet > 0">
+                                        Total price: <strong>${{calculateTotalPrice().toFixed(2)}}</strong>
+                                    </p>
+                                </div>
+
+                                <div class="well">
+                                    <h4>Purchase Summary</h4>
+                                    <ul>
+                                        <li><strong>Sets:</strong> {{purchase.sets}}</li>
+                                        <li><strong>Total Spots:</strong> {{calculateTotalSpots()}} spots</li>
+                                        <li><strong>Total Duration:</strong> {{calculateTotalSpots() * 20}} seconds
+                                            ({{(calculateTotalSpots() * 20 / 60).toFixed(1)}} minutes)</li>
+                                        <li ng-if="purchase.pricePerSet > 0"><strong>Total Price:</strong>
+                                            ${{calculateTotalPrice().toFixed(2)}}</li>
+                                    </ul>
+                                </div>
+
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary btn-lg"
+                                        ng-disabled="purchaseForm.$invalid || loading">
+                                        <i class="glyphicon glyphicon-shopping-cart"></i>
+                                        Purchase {{calculateTotalSpots()}} Spots
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4>Purchase History</h4>
+                        </div>
+                        <div class="panel-body">
+                            <div ng-if="!selectedAdvertiser" class="text-muted">
+                                <i class="glyphicon glyphicon-info-sign"></i>
+                                Select an advertiser to view purchase history
+                            </div>
+
+                            <div ng-if="selectedAdvertiser && purchases.length === 0" class="text-muted">
+                                No purchases yet for this advertiser
+                            </div>
+
+                            <div ng-if="selectedAdvertiser && purchases.length > 0">
+                                <table class="table table-condensed">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Asset</th>
+                                            <th>Spots</th>
+                                            <th>Remaining</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr ng-repeat="p in purchases">
+                                            <td><small>{{formatDate(p.purchaseDate)}}</small></td>
+                                            <td><small>{{p.adAsset.filename}}</small></td>
+                                            <td class="text-center">
+                                                <span class="badge badge-info">{{p.totalSpots}}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge"
+                                                    ng-class="{'badge-success': p.spotsRemaining > 0, 'badge-default': p.spotsRemaining === 0}">
+                                                    {{p.spotsRemaining}}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
