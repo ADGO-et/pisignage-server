@@ -17,14 +17,12 @@ var SpotPurchaseSchema = new Schema({
     sets: { type: Number, required: true, min: 1 }, // Number of sets purchased (1 set = 40 spots)
     totalSpots: {
         type: Number,
-        required: true,
         default: function () {
             return this.sets ? this.sets * 40 : 0;
         }
     }, // sets * 40
     spotsRemaining: {
         type: Number,
-        required: true,
         default: function () {
             var total = this.totalSpots || (this.sets ? this.sets * 40 : 0);
             return total;
