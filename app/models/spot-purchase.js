@@ -59,15 +59,19 @@ var SpotPurchaseSchema = new Schema({
 // Ensure computed fields exist before validation runs
 SpotPurchaseSchema.pre('validate', function (next) {
     var sets = this.sets || 0;
-    if (!this.totalSpots) {
+
+    // Always calculate totalSpots if not explicitly set or if it's undefined/null
+    if (this.totalSpots === undefined || this.totalSpots === null) {
         this.totalSpots = sets * 40;
     }
 
-    if (!this.spotsRemaining && this.isNew) {
+    // For new documents, set spotsRemaining to totalSpots if not set
+    if (this.isNew && (this.spotsRemaining === undefined || this.spotsRemaining === null)) {
         this.spotsRemaining = this.totalSpots;
     }
 
-    if (!this.totalPrice) {
+    // Calculate totalPrice if not set
+    if (this.totalPrice === undefined || this.totalPrice === null) {
         this.totalPrice = (this.pricePerSet || 0) * sets;
     }
 
