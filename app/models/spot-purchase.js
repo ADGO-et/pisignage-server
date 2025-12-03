@@ -15,12 +15,30 @@ var SpotPurchaseSchema = new Schema({
 
     // Purchase details
     sets: { type: Number, required: true, min: 1 }, // Number of sets purchased (1 set = 40 spots)
-    totalSpots: { type: Number, required: true }, // sets * 40
-    spotsRemaining: { type: Number, required: true },
+    totalSpots: {
+        type: Number,
+        required: true,
+        default: function () {
+            return this.sets ? this.sets * 40 : 0;
+        }
+    }, // sets * 40
+    spotsRemaining: {
+        type: Number,
+        required: true,
+        default: function () {
+            var total = this.totalSpots || (this.sets ? this.sets * 40 : 0);
+            return total;
+        }
+    },
 
     // Pricing (optional for future use)
     pricePerSet: { type: Number, default: 0 },
-    totalPrice: { type: Number, default: 0 },
+    totalPrice: {
+        type: Number,
+        default: function () {
+            return (this.pricePerSet || 0) * (this.sets || 0);
+        }
+    },
 
     // Status
     active: { type: Boolean, default: true },
@@ -36,6 +54,24 @@ var SpotPurchaseSchema = new Schema({
     playCount: { type: Number, default: 0 }
 }, {
     usePushEach: true
+});
+
+// Ensure computed fields exist before validation runs
+SpotPurchaseSchema.pre('validate', function (next) {
+    var sets = this.sets || 0;
+    if (!this.totalSpots) {
+        this.totalSpots = sets * 40;
+    }
+
+    if (!this.spotsRemaining && this.isNew) {
+        this.spotsRemaining = this.totalSpots;
+    }
+
+    if (!this.totalPrice) {
+        this.totalPrice = (this.pricePerSet || 0) * sets;
+    }
+
+    next();
 });
 
 // Validation
