@@ -35,15 +35,14 @@ angular.module('piSpotPurchases.controllers', [])
                 });
         };
 
-        // Load assets
+        // Load assets (videos and images allowed)
         $scope.loadAssets = function () {
             $http.get(piUrls.files)
                 .success(function (data) {
                     if (data.success) {
-                        // Filter for video files only (20, 40, or 60 seconds)
+                        var allowedExtensions = /\.(mp4|avi|mov|mkv|webm|flv|mpg|mpeg|jpg|jpeg|png|gif|bmp|webp)$/;
                         $scope.assets = data.data.files.filter(function (file) {
-                            var filename = file.toLowerCase();
-                            return filename.match(/\\.(mp4|avi|mov|mkv|webm|flv)$/);
+                            return allowedExtensions.test(file.toLowerCase());
                         });
                     }
                 })

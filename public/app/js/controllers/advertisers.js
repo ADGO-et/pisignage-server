@@ -26,12 +26,12 @@ angular.module('piAdvertisers.controllers', [])
 
         // Create new advertiser
         $scope.createAdvertiser = function () {
-            $state.go('advertisers.new');
+            $state.go('home.advertisers.new');
         };
 
         // Edit advertiser
         $scope.editAdvertiser = function (advertiser) {
-            $state.go('advertisers.edit', { id: advertiser._id });
+            $state.go('home.advertisers.edit', { id: advertiser._id });
         };
 
         // Delete advertiser
@@ -127,7 +127,7 @@ angular.module('piAdvertisers.controllers', [])
                 .error(function (data) {
                     console.log('Error loading advertiser:', data);
                     $scope.loading = false;
-                    $state.go('advertisers.list');
+                        $state.go('home.advertisers.list');
                 });
         }
 
@@ -182,7 +182,7 @@ angular.module('piAdvertisers.controllers', [])
                             msg: $scope.isEdit ? 'Advertiser updated successfully' : 'Advertiser created successfully',
                             title: 'Success'
                         });
-                        $state.go('advertisers.list');
+                            $state.go('home.advertisers.list');
                     } else {
                         piPopup.status({ msg: data.stat_message || 'Error saving advertiser', title: 'Error' });
                     }
@@ -196,6 +196,6 @@ angular.module('piAdvertisers.controllers', [])
 
         // Cancel
         $scope.cancel = function () {
-            $state.go('advertisers.list');
+                $state.go('home.advertisers.list');
         };
     });
