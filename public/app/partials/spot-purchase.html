@@ -20,7 +20,8 @@
                                         ng-change="onAdvertiserSelected()" required>
                                         <option value="">-- Select Advertiser --</option>
                                         <option ng-repeat="adv in advertisers" value="{{adv._id}}">
-                                            {{adv.name}} ({{adv.totalSpotsRemaining || 0}} spots remaining)
+                                            {{adv.name}}
+                                            ({{adv.dailySpotsCapacity ? (adv.dailySpotsRemaining || 0) + ' / ' + adv.dailySpotsCapacity + ' daily spots remaining' : 'configure ad time window'}})
                                         </option>
                                     </select>
                                 </div>

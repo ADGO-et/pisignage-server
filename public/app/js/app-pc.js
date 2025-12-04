@@ -17,7 +17,8 @@ angular.module('piServerApp', [
     'piPlaylists.controllers',
     'piLabels.controllers',
     'piAdvertisers.controllers',      
-    'piSpotPurchases.controllers', 
+    'piSpotPurchases.controllers',
+    'piDeployments.controllers',
     'pisignage.directives',
     'pisignage.filters',
     'pisignage.services'
@@ -208,6 +209,16 @@ angular.module('piServerApp', [
                     "main": {
                         templateUrl: '/app/partials/spot-purchase.html',
                         controller: 'SpotPurchasesCtrl'
+                    }
+                }
+            })
+
+            .state("home.purchases", {
+                url: "purchases",
+                views: {
+                    "main": {
+                        templateUrl: '/app/partials/deployments.html',
+                        controller: 'DeploymentsCtrl'
                     }
                 }
             })

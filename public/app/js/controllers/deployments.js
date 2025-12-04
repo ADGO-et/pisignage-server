@@ -12,6 +12,42 @@ angular.module('piDeployments.controllers', [])
         $scope.errorCount = 0;
         $scope.deploying = false;
         $scope.deploymentResult = null;
+        $scope.activeTab = 'pending';
+        $scope.statusTabs = [
+            { key: 'pending', label: 'Pending' },
+            { key: 'deployed', label: 'Success' },
+            { key: 'error', label: 'Error' }
+        ];
+
+        $scope.setTab = function (tabKey) {
+            $scope.activeTab = tabKey;
+        };
+
+        $scope.getCountForTab = function (tabKey) {
+            switch (tabKey) {
+                case 'pending':
+                    return $scope.pendingCount;
+                case 'deployed':
+                    return $scope.deployedCount;
+                case 'error':
+                    return $scope.errorCount;
+                default:
+                    return 0;
+            }
+        };
+
+        $scope.getPurchasesForTab = function (tabKey) {
+            switch (tabKey) {
+                case 'pending':
+                    return $scope.pendingPurchases;
+                case 'deployed':
+                    return $scope.deployedPurchases;
+                case 'error':
+                    return $scope.errorPurchases;
+                default:
+                    return [];
+            }
+        };
 
         // Load purchases by status
         $scope.loadPurchasesByStatus = function (status) {
@@ -42,13 +78,8 @@ angular.module('piDeployments.controllers', [])
             $scope.loadPurchasesByStatus('error');
         };
 
-        // Deploy all pending purchases
+        // Deploy (redeploy) all purchases
         $scope.deployAll = function () {
-            if ($scope.pendingCount === 0) {
-                piPopup.status({ msg: 'No pending purchases to deploy', title: 'Info' });
-                return;
-            }
-
             $scope.deploying = true;
             $scope.deploymentResult = null;
 
@@ -58,7 +89,7 @@ angular.module('piDeployments.controllers', [])
                     if (data.success) {
                         $scope.deploymentResult = data.data;
                         piPopup.status({
-                            msg: 'Deployment completed! Deployed: ' + data.data.deployed + ', Errors: ' + data.data.errors,
+                            msg: 'Redeployment completed! Deployed: ' + data.data.deployed + ', Errors: ' + data.data.errors,
                             title: 'Success'
                         });
                         // Reload all statuses

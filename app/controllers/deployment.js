@@ -14,8 +14,10 @@ var mongoose = require('mongoose'),
  * Creates daily playlists for each date with active campaigns
  */
 exports.deployAllPurchases = function (req, res) {
-    // Get all pending purchases
-    SpotPurchase.find({ deploymentStatus: 'pending', active: true })
+    // Get all purchases regardless of current deployment status (pending/success/error)
+    var statusesToProcess = ['pending', 'deployed', 'error'];
+
+    SpotPurchase.find({ deploymentStatus: { $in: statusesToProcess }, active: true })
         .populate('advertiser._id')
         .populate('targetGroups')
         .exec(function (err, purchases) {

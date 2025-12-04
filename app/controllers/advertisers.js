@@ -3,7 +3,9 @@
 var mongoose = require('mongoose'),
     Advertiser = mongoose.model('Advertiser'),
     SpotPurchase = mongoose.model('SpotPurchase'),
+    Settings = mongoose.model('Settings'),
     rest = require('../others/restware'),
+    spotAvailability = require('./spot-availability'),
     _ = require('lodash');
 
 // Load an advertiser object
@@ -42,8 +44,75 @@ exports.index = function (req, res) {
     Advertiser.list(options, function (err, advertisers) {
         if (err)
             return rest.sendError(res, 'Unable to get advertiser list', err);
-        else
+
+        if (!advertisers || advertisers.length === 0) {
             return rest.sendSuccess(res, 'Sending advertiser list', advertisers || []);
+        }
+
+        var advertiserIds = advertisers.map(function (adv) { return adv._id; });
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+        var activeStatuses = ['pending', 'deployed'];
+        var spotsPerDayExpr = { $ifNull: ['$spotsPerDay', '$totalSpots'] };
+
+        SpotPurchase.aggregate([
+            { $match: { 'advertiser._id': { $in: advertiserIds } } },
+            {
+                $group: {
+                    _id: '$advertiser._id',
+                    totalSpotsPurchased: { $sum: { $ifNull: ['$totalSpots', 0] } },
+                    totalSpotsRemaining: { $sum: { $ifNull: ['$spotsRemaining', 0] } },
+                    activeSpotsPerDay: {
+                        $sum: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $lte: ['$startDate', today] },
+                                        { $gte: ['$endDate', today] },
+                                        { $eq: ['$active', true] },
+                                        { $in: ['$deploymentStatus', activeStatuses] }
+                                    ]
+                                },
+                                spotsPerDayExpr,
+                                0
+                            ]
+                        }
+                    }
+                }
+            }
+        ]).exec(function (aggErr, stats) {
+            if (aggErr) {
+                return rest.sendError(res, 'Error calculating advertiser statistics', aggErr);
+            }
+
+            Settings.findOne({}, function (settingsErr, settings) {
+                if (settingsErr) {
+                    console.log('Error loading settings for advertiser stats:', settingsErr);
+                }
+
+                var dailySpots = spotAvailability.calculateDailySpots(settings);
+                var statsMap = {};
+
+                (stats || []).forEach(function (stat) {
+                    statsMap[stat._id.toString()] = stat;
+                });
+
+                var response = advertisers.map(function (adv) {
+                    var advObj = adv.toObject();
+                    var stat = statsMap[adv._id.toString()] || {};
+                    advObj.totalSpotsPurchased = stat.totalSpotsPurchased || 0;
+                    advObj.totalSpotsRemaining = stat.totalSpotsRemaining || 0;
+                    advObj.activeSpotsPerDay = stat.activeSpotsPerDay || 0;
+                    advObj.dailySpotsCapacity = dailySpots;
+                    advObj.dailySpotsRemaining = dailySpots > 0
+                        ? Math.max(0, dailySpots - advObj.activeSpotsPerDay)
+                        : null;
+                    return advObj;
+                });
+
+                return rest.sendSuccess(res, 'Sending advertiser list', response);
+            });
+        });
     });
 };
 
@@ -53,9 +122,52 @@ exports.getObject = function (req, res) {
     if (advertiser) {
         // Also get spot purchases for this advertiser
         SpotPurchase.getByAdvertiser(advertiser._id, function (err, purchases) {
-            var response = advertiser.toObject();
-            response.purchases = purchases || [];
-            return rest.sendSuccess(res, 'Advertiser details', response);
+            if (err) {
+                return rest.sendError(res, 'Error loading advertiser purchases', err);
+            }
+
+            Settings.findOne({}, function (settingsErr, settings) {
+                if (settingsErr) {
+                    console.log('Error loading settings for advertiser detail stats:', settingsErr);
+                }
+
+                var dailySpots = spotAvailability.calculateDailySpots(settings);
+                var today = new Date();
+                today.setHours(0, 0, 0, 0);
+                var activeStatuses = ['pending', 'deployed'];
+
+                var totals = (purchases || []).reduce(function (acc, purchase) {
+                    var totalSpots = purchase.totalSpots || 0;
+                    var remaining = purchase.spotsRemaining || 0;
+                    var spotsPerDay = purchase.spotsPerDay || totalSpots;
+
+                    acc.totalSpotsPurchased += totalSpots;
+                    acc.totalSpotsRemaining += remaining;
+
+                    var purchaseStart = new Date(purchase.startDate);
+                    purchaseStart.setHours(0, 0, 0, 0);
+                    var purchaseEnd = new Date(purchase.endDate);
+                    purchaseEnd.setHours(0, 0, 0, 0);
+
+                    if (purchase.active && activeStatuses.indexOf(purchase.deploymentStatus) !== -1 &&
+                        today >= purchaseStart && today <= purchaseEnd) {
+                        acc.activeSpotsPerDay += spotsPerDay;
+                    }
+
+                    return acc;
+                }, { totalSpotsPurchased: 0, totalSpotsRemaining: 0, activeSpotsPerDay: 0 });
+
+                var response = advertiser.toObject();
+                response.purchases = purchases || [];
+                response.totalSpotsPurchased = totals.totalSpotsPurchased;
+                response.totalSpotsRemaining = totals.totalSpotsRemaining;
+                response.dailySpotsCapacity = dailySpots;
+                response.dailySpotsRemaining = dailySpots > 0
+                    ? Math.max(0, dailySpots - totals.activeSpotsPerDay)
+                    : null;
+
+                return rest.sendSuccess(res, 'Advertiser details', response);
+            });
         });
     } else {
         return rest.sendError(res, 'Unable to retrieve advertiser details');

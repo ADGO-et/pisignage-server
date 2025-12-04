@@ -46,13 +46,23 @@
                                     <small>{{formatTimeRange(advertiser)}}</small>
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge badge-info">{{advertiser.totalSpotsPurchased || 0}}</span>
+                                    <span class="badge badge-info" title="Total active spots purchased">
+                                        {{advertiser.totalSpotsPurchased || 0}}
+                                    </span>
+                                    <div><small class="text-muted">lifetime</small></div>
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge"
-                                        ng-class="{'badge-success': advertiser.totalSpotsRemaining > 0, 'badge-default': advertiser.totalSpotsRemaining === 0}">
-                                        {{advertiser.totalSpotsRemaining || 0}}
-                                    </span>
+                                    <div ng-if="advertiser.dailySpotsCapacity && advertiser.dailySpotsCapacity > 0">
+                                        <span class="badge"
+                                            ng-class="{'badge-success': (advertiser.dailySpotsRemaining || 0) > 0, 'badge-default': (advertiser.dailySpotsRemaining || 0) === 0}"
+                                            title="Daily slots remaining based on ad time window settings">
+                                            {{advertiser.dailySpotsRemaining || 0}}
+                                        </span>
+                                        <div><small class="text-muted">of {{advertiser.dailySpotsCapacity}} daily slots</small></div>
+                                    </div>
+                                    <div class="text-muted" ng-if="!advertiser.dailySpotsCapacity || advertiser.dailySpotsCapacity === 0">
+                                        Configure ad time window in Settings
+                                    </div>
                                 </td>
                                 <td>
                                     <span class="label"
