@@ -79,6 +79,7 @@ angular.module('piSettings.controllers', []).
             })
 
         $scope.saveSettings = function () {
+            console.log('Saving settings...');
             // Create a copy to avoid modifying the original
             var settingsToSave = angular.copy($scope.settings);
 
@@ -95,20 +96,32 @@ angular.module('piSettings.controllers', []).
             $http.post(piUrls.settings, settingsToSave)
                 .success(function (data, status) {
                     if (data.success) {
+                        console.log('Settings saved successfully');
                     }
-                    //if ($scope.settingsForm.$pristine) {
+                    //if ($scope.settingsForm.user.$dirty) {
                     $scope.settingsForm.$setPristine();
                     $scope.loadMsg = "reloading..."
                     setTimeout($window.location.reload.bind($window.location), 2000);
                     //}
                 })
                 .error(function (data, status) {
+                    console.error('Error saving settings:', data);
                 });
         }
 
         // Helper function to extract HH:MM from ISO date or return as-is if already in HH:MM format
         function extractTimeFromISO(timeStr) {
             if (!timeStr) return '';
+
+            // If it's a Date object
+            if (timeStr instanceof Date) {
+                var hours = ('0' + timeStr.getHours()).slice(-2);
+                var minutes = ('0' + timeStr.getMinutes()).slice(-2);
+                return hours + ':' + minutes;
+            }
+
+            // Ensure it's a string
+            timeStr = String(timeStr);
 
             // If it's already in HH:MM format, return it
             if (/^\d{2}:\d{2}$/.test(timeStr)) {
@@ -129,7 +142,14 @@ angular.module('piSettings.controllers', []).
         // Convert 24-hour time to 12-hour AM/PM format
         $scope.formatTime12Hour = function (time24) {
             if (!time24) return '';
+            // Handle Date objects
+            if (time24 instanceof Date) {
+                time24 = extractTimeFromISO(time24);
+            }
+
             var parts = time24.split(':');
+            if (parts.length < 2) return time24;
+
             var hours = parseInt(parts[0]);
             var minutes = parts[1];
             var ampm = hours >= 12 ? 'PM' : 'AM';
@@ -152,6 +172,8 @@ angular.module('piSettings.controllers', []).
 
             var startParts = startTime.split(':');
             var endParts = endTime.split(':');
+
+            if (startParts.length < 2 || endParts.length < 2) return 0;
 
             var startSeconds = (parseInt(startParts[0]) * 3600) + (parseInt(startParts[1]) * 60);
             var endSeconds = (parseInt(endParts[0]) * 3600) + (parseInt(endParts[1]) * 60);
