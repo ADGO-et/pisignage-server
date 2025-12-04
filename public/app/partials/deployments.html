@@ -1,0 +1,125 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Advertisement Deployment</h2>
+            <p class="text-muted">Deploy purchased ad spots to player groups</p>
+
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h4>Deployment Control</h4>
+                </div>
+                <div class="panel-body">
+                    <div class="alert alert-info">
+                        <i class="glyphicon glyphicon-info-sign"></i>
+                        <strong>How it works:</strong> Clicking "Deploy All Pending Purchases" will generate daily
+                        playlists for each campaign date and assign them to the selected player groups. Ads will play
+                        during the configured time window.
+                    </div>
+
+                    <button class="btn btn-primary btn-lg" ng-click="deployAll()"
+                        ng-disabled="deploying || pendingCount === 0">
+                        <i class="glyphicon glyphicon-play-circle" ng-if="!deploying"></i>
+                        <i class="fa fa-spinner fa-spin" ng-if="deploying"></i>
+                        Deploy All Pending Purchases ({{pendingCount}})
+                    </button>
+
+                    <div class="alert alert-success" ng-if="deploymentResult && deploymentResult.deployed > 0"
+                        style="margin-top: 20px;">
+                        <i class="glyphicon glyphicon-ok-circle"></i>
+                        <strong>✓ Deployment Successful!</strong>
+                        <br>Deployed: {{deploymentResult.deployed}} purchases
+                        <br>Errors: {{deploymentResult.errors}}
+                    </div>
+
+                    <div class="alert alert-danger" ng-if="deploymentResult && deploymentResult.errors > 0"
+                        style="margin-top: 20px;">
+                        <i class="glyphicon glyphicon-exclamation-sign"></i>
+                        <strong>Deployment Completed with Errors</strong>
+                        <br>Deployed: {{deploymentResult.deployed}} purchases
+                        <br>Errors: {{deploymentResult.errors}}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="panel panel-warning">
+                        <div class="panel-heading">
+                            <h4>⏳ Pending ({{pendingCount}})</h4>
+                        </div>
+                        <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
+                            <div ng-if="pendingPurchases.length === 0" class="text-muted">
+                                No pending purchases
+                            </div>
+                            <table class="table table-condensed" ng-if="pendingPurchases.length > 0">
+                                <tbody>
+                                    <tr ng-repeat="p in pendingPurchases">
+                                        <td>
+                                            <strong>{{p.advertiser.name}}</strong>
+                                            <br><small>{{p.adAsset.filename}}</small>
+                                            <br><small>{{formatDate(p.startDate)}} - {{formatDate(p.endDate)}}</small>
+                                            <br><small>{{p.spotsPerDay}} spots/day</small>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="panel panel-success">
+                        <div class="panel-heading">
+                            <h4>✅ Deployed ({{deployedCount}})</h4>
+                        </div>
+                        <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
+                            <div ng-if="deployedPurchases.length === 0" class="text-muted">
+                                No deployed purchases
+                            </div>
+                            <table class="table table-condensed" ng-if="deployedPurchases.length > 0">
+                                <tbody>
+                                    <tr ng-repeat="p in deployedPurchases">
+                                        <td>
+                                            <strong>{{p.advertiser.name}}</strong>
+                                            <br><small>{{p.adAsset.filename}}</small>
+                                            <br><small>{{formatDate(p.startDate)}} - {{formatDate(p.endDate)}}</small>
+                                            <br><small>Deployed: {{formatDate(p.deployedAt)}}</small>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="panel panel-danger">
+                        <div class="panel-heading">
+                            <h4>❌ Errors ({{errorCount}})</h4>
+                        </div>
+                        <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
+                            <div ng-if="errorPurchases.length === 0" class="text-muted">
+                                No errors
+                            </div>
+                            <table class="table table-condensed" ng-if="errorPurchases.length > 0">
+                                <tbody>
+                                    <tr ng-repeat="p in errorPurchases">
+                                        <td>
+                                            <strong>{{p.advertiser.name}}</strong>
+                                            <br><small>{{p.adAsset.filename}}</small>
+                                            <br><small class="text-danger">{{p.deploymentError}}</small>
+                                            <br>
+                                            <button class="btn btn-xs btn-warning" ng-click="redeployPurchase(p._id)">
+                                                <i class="glyphicon glyphicon-repeat"></i> Retry
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

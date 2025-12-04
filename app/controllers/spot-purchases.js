@@ -5,6 +5,7 @@ var mongoose = require('mongoose'),
     SpotPurchase = mongoose.model('SpotPurchase'),
     Asset = mongoose.model('Asset'),
     rest = require('../others/restware'),
+    spotAvailability = require('./spot-availability'),
     _ = require('lodash');
 
 // Purchase spots for an advertiser
@@ -24,6 +25,18 @@ exports.purchaseSpots = function (req, res) {
         return rest.sendError(res, 'Number of sets must be at least 1');
     }
 
+    // Validate date range (NEW REQUIREMENT)
+    if (!purchaseData.startDate || !purchaseData.endDate) {
+        return rest.sendError(res, 'Campaign start date and end date are required');
+    }
+
+    var startDate = new Date(purchaseData.startDate);
+    var endDate = new Date(purchaseData.endDate);
+
+    if (startDate > endDate) {
+        return rest.sendError(res, 'Start date must be before or equal to end date');
+    }
+
     // Validate ad asset duration (must be 20 seconds)
     if (purchaseData.adAsset.duration && purchaseData.adAsset.duration !== 20) {
         return rest.sendError(res, 'Ad asset duration must be exactly 20 seconds for spot-based advertising');
@@ -41,59 +54,82 @@ exports.purchaseSpots = function (req, res) {
         }
 
         var totalSpots = purchaseData.sets * 40;
+        var spotsPerDay = totalSpots; // Spots are per day, not divided
         var pricePerSet = purchaseData.pricePerSet || 0;
 
-        // Create spot purchase
-        var purchase = new SpotPurchase({
-            advertiser: {
-                _id: advertiser._id,
-                name: advertiser.name
-            },
-            adAsset: purchaseData.adAsset,
-            sets: purchaseData.sets,
-            totalSpots: totalSpots,
-            spotsRemaining: totalSpots,
-            pricePerSet: pricePerSet,
-            totalPrice: pricePerSet * purchaseData.sets,
-            expirationDate: purchaseData.expirationDate,
-            createdBy: purchaseData.createdBy
-        });
-
-        purchase.save(function (err, savedPurchase) {
-            if (err) {
-                return rest.sendError(res, 'Error creating spot purchase', err);
-            }
-
-            // Update advertiser's total spots
-            advertiser.totalSpotsPurchased = (advertiser.totalSpotsPurchased || 0) + savedPurchase.totalSpots;
-            advertiser.totalSpotsRemaining = (advertiser.totalSpotsRemaining || 0) + savedPurchase.spotsRemaining;
-
-            advertiser.save(function (err) {
+        // Validate spot availability for the date range
+        spotAvailability.validatePurchaseAvailability(
+            purchaseData.advertiserId,
+            startDate,
+            endDate,
+            spotsPerDay,
+            function (err, validation) {
                 if (err) {
-                    console.log('Error updating advertiser spot counts:', err);
+                    return rest.sendError(res, 'Error validating spot availability', err);
                 }
 
-                // Update asset if it exists
-                Asset.findOne({ name: purchaseData.adAsset.filename }, function (err, asset) {
-                    if (!err && asset) {
-                        asset.isAdvertisement = true;
-                        asset.advertiser = {
-                            _id: advertiser._id,
-                            name: advertiser.name
-                        };
-                        asset.spotsPurchased = (asset.spotsPurchased || 0) + savedPurchase.totalSpots;
-                        asset.spotsRemaining = (asset.spotsRemaining || 0) + savedPurchase.spotsRemaining;
-                        asset.save(function (err) {
-                            if (err) console.log('Error updating asset:', err);
-                        });
-                    }
+                if (!validation.valid) {
+                    return rest.sendError(res, validation.message, validation.unavailableDates);
+                }
+
+                // Create spot purchase
+                var purchase = new SpotPurchase({
+                    advertiser: {
+                        _id: advertiser._id,
+                        name: advertiser.name
+                    },
+                    adAsset: purchaseData.adAsset,
+                    sets: purchaseData.sets,
+                    totalSpots: totalSpots,
+                    spotsRemaining: totalSpots,
+                    spotsPerDay: spotsPerDay,
+                    startDate: startDate,
+                    endDate: endDate,
+                    targetGroups: purchaseData.targetGroups || [],
+                    pricePerSet: pricePerSet,
+                    totalPrice: pricePerSet * purchaseData.sets,
+                    deploymentStatus: 'pending',
+                    expirationDate: purchaseData.expirationDate,
+                    createdBy: purchaseData.createdBy
                 });
 
-                console.log('Spot purchase created');
+                purchase.save(function (err, savedPurchase) {
+                    if (err) {
+                        return rest.sendError(res, 'Error creating spot purchase', err);
+                    }
 
-                return rest.sendSuccess(res, 'Spot purchase created successfully', savedPurchase);
-            });
-        });
+                    // Update advertiser's total spots
+                    advertiser.totalSpotsPurchased = (advertiser.totalSpotsPurchased || 0) + savedPurchase.totalSpots;
+                    advertiser.totalSpotsRemaining = (advertiser.totalSpotsRemaining || 0) + savedPurchase.spotsRemaining;
+
+                    advertiser.save(function (err) {
+                        if (err) {
+                            console.log('Error updating advertiser spot counts:', err);
+                        }
+
+                        // Update asset if it exists
+                        Asset.findOne({ name: purchaseData.adAsset.filename }, function (err, asset) {
+                            if (!err && asset) {
+                                asset.isAdvertisement = true;
+                                asset.advertiser = {
+                                    _id: advertiser._id,
+                                    name: advertiser.name
+                                };
+                                asset.spotsPurchased = (asset.spotsPurchased || 0) + savedPurchase.totalSpots;
+                                asset.spotsRemaining = (asset.spotsRemaining || 0) + savedPurchase.spotsRemaining;
+                                asset.save(function (err) {
+                                    if (err) console.log('Error updating asset:', err);
+                                });
+                            }
+                        });
+
+                        console.log('Spot purchase created with date range:', startDate, 'to', endDate);
+
+                        return rest.sendSuccess(res, 'Spot purchase created successfully', savedPurchase);
+                    });
+                });
+            }
+        );
     });
 };
 
@@ -175,6 +211,26 @@ exports.index = function (req, res) {
     });
 };
 
+// Get purchases by deployment status
+exports.getPurchasesByDeploymentStatus = function (req, res) {
+    var status = req.params.status;
+
+    if (!status || !['pending', 'deployed', 'error'].includes(status)) {
+        return rest.sendError(res, 'Invalid deployment status. Must be: pending, deployed, or error');
+    }
+
+    SpotPurchase.find({ deploymentStatus: status })
+        .populate('advertiser._id')
+        .populate('targetGroups')
+        .sort({ purchaseDate: -1 })
+        .exec(function (err, purchases) {
+            if (err)
+                return rest.sendError(res, 'Error getting purchases by status', err);
+            else
+                return rest.sendSuccess(res, 'Purchases with status: ' + status, purchases || []);
+        });
+};
+
 // Decrement spots (called internally after playlist generation)
 exports.decrementSpots = function (purchaseId, spotsUsed, callback) {
     SpotPurchase.decrementSpots(purchaseId, spotsUsed, function (err, purchase) {
@@ -206,3 +262,4 @@ exports.decrementSpots = function (purchaseId, spotsUsed, callback) {
         callback(null, purchase);
     });
 };
+

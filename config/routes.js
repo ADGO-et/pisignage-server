@@ -16,6 +16,8 @@ var assets = require('../app/controllers/assets'),
     licenses = require('../app/controllers/licenses'),
     advertisers = require('../app/controllers/advertisers'),
     spotPurchases = require('../app/controllers/spot-purchases'),
+    spotAvailability = require('../app/controllers/spot-availability'),
+    deployment = require('../app/controllers/deployment'),
     playlistGenerator = require('../app/controllers/playlist-generator');
 //gcalAuthorize = require('../app/controllers/gcal-authorize');
 
@@ -110,6 +112,15 @@ router.get('/api/spot-purchases', spotPurchases.index);
 router.post('/api/spot-purchases', spotPurchases.purchaseSpots);
 router.get('/api/spot-purchases/advertiser/:advertiserId', spotPurchases.getAdvertiserPurchases);
 router.get('/api/spot-purchases/remaining/:advertiserId', spotPurchases.getRemainingSpots);
+router.get('/api/spot-purchases/by-status/:status', spotPurchases.getPurchasesByDeploymentStatus);
+
+// Spot availability routes
+router.get('/api/spot-availability/daily', spotAvailability.getDailySpots);
+router.post('/api/spot-availability/check', spotAvailability.checkAvailability);
+
+// Deployment routes
+router.post('/api/deployments/deploy-all', deployment.deployAllPurchases);
+router.post('/api/deployments/redeploy/:purchaseId', deployment.redeployPurchase);
 
 // Playlist generation route
 router.post('/api/playlists/regenerate/:groupId', playlistGenerator.regenerateForGroup);

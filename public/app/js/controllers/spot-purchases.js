@@ -6,6 +6,7 @@ angular.module('piSpotPurchases.controllers', [])
 
         $scope.advertisers = [];
         $scope.assets = [];
+        $scope.groups = [];
         $scope.purchase = {
             advertiserId: null,
             adAsset: {
@@ -13,12 +14,17 @@ angular.module('piSpotPurchases.controllers', [])
                 duration: 20
             },
             sets: 1,
-            pricePerSet: 0
+            pricePerSet: 0,
+            startDate: null,
+            endDate: null,
+            targetGroups: []
         };
 
         $scope.loading = false;
         $scope.purchases = [];
         $scope.selectedAdvertiser = null;
+        $scope.availabilityChecking = false;
+        $scope.availabilityResult = null;
 
         // Load advertisers
         $scope.loadAdvertisers = function () {
@@ -51,14 +57,84 @@ angular.module('piSpotPurchases.controllers', [])
                 });
         };
 
-        // Calculate total spots
+        // Load groups
+        $scope.loadGroups = function () {
+            $http.get(piUrls.groups)
+                .success(function (data) {
+                    if (data.success) {
+                        $scope.groups = data.data;
+                    }
+                })
+                .error(function (data) {
+                    console.log('Error loading groups:', data);
+                });
+        };
+
+        // Calculate total spots (per day)
         $scope.calculateTotalSpots = function () {
             return $scope.purchase.sets * 40;
+        };
+
+        // Calculate spots per day (same as total spots since spots are per day)
+        $scope.calculateSpotsPerDay = function () {
+            return $scope.calculateTotalSpots();
+        };
+
+        // Calculate days in range
+        $scope.calculateDaysInRange = function () {
+            if (!$scope.purchase.startDate || !$scope.purchase.endDate) return 0;
+            var start = new Date($scope.purchase.startDate);
+            var end = new Date($scope.purchase.endDate);
+            var diffTime = Math.abs(end - start);
+            var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            return diffDays;
         };
 
         // Calculate total price
         $scope.calculateTotalPrice = function () {
             return $scope.purchase.sets * $scope.purchase.pricePerSet;
+        };
+
+        // Toggle group selection
+        $scope.toggleGroup = function (groupId) {
+            var idx = $scope.purchase.targetGroups.indexOf(groupId);
+            if (idx > -1) {
+                $scope.purchase.targetGroups.splice(idx, 1);
+            } else {
+                $scope.purchase.targetGroups.push(groupId);
+            }
+        };
+
+        // Check if group is selected
+        $scope.isGroupSelected = function (groupId) {
+            return $scope.purchase.targetGroups.indexOf(groupId) > -1;
+        };
+
+        // Check availability
+        $scope.checkAvailability = function () {
+            if (!$scope.purchase.startDate || !$scope.purchase.endDate || !$scope.purchase.sets) {
+                $scope.availabilityResult = null;
+                return;
+            }
+
+            $scope.availabilityChecking = true;
+            $scope.availabilityResult = null;
+
+            $http.post(piUrls.base + 'api/spot-availability/check', {
+                startDate: $scope.purchase.startDate,
+                endDate: $scope.purchase.endDate,
+                spotsPerDay: $scope.calculateSpotsPerDay()
+            })
+                .success(function (data) {
+                    $scope.availabilityChecking = false;
+                    if (data.success) {
+                        $scope.availabilityResult = data.data;
+                    }
+                })
+                .error(function (data) {
+                    $scope.availabilityChecking = false;
+                    console.log('Error checking availability:', data);
+                });
         };
 
         // When advertiser is selected
@@ -109,19 +185,38 @@ angular.module('piSpotPurchases.controllers', [])
                 return;
             }
 
+            if (!$scope.purchase.startDate || !$scope.purchase.endDate) {
+                piPopup.status({ msg: 'Please select campaign start and end dates', title: 'Validation Error' });
+                return;
+            }
+
+            if ($scope.purchase.targetGroups.length === 0) {
+                piPopup.status({ msg: 'Please select at least one target group', title: 'Validation Error' });
+                return;
+            }
+
+            if ($scope.availabilityResult && !$scope.availabilityResult.valid) {
+                piPopup.status({ msg: 'Not enough available spots. Please reduce quantity or select different dates.', title: 'Validation Error' });
+                return;
+            }
+
             $scope.loading = true;
 
             $http.post(piUrls.spotPurchases, $scope.purchase)
                 .success(function (data) {
                     if (data.success) {
                         piPopup.status({
-                            msg: 'Spot purchase successful! ' + $scope.calculateTotalSpots() + ' spots added.',
+                            msg: 'Spot purchase successful! ' + ($scope.calculateSpotsPerDay() * $scope.calculateDaysInRange()) + ' spots added.',
                             title: 'Success'
                         });
 
                         // Reset form
                         $scope.purchase.adAsset.filename = null;
                         $scope.purchase.sets = 1;
+                        $scope.purchase.startDate = null;
+                        $scope.purchase.endDate = null;
+                        $scope.purchase.targetGroups = [];
+                        $scope.availabilityResult = null;
 
                         // Reload purchases
                         $scope.loadAdvertiserPurchases();
@@ -145,4 +240,5 @@ angular.module('piSpotPurchases.controllers', [])
         // Initialize
         $scope.loadAdvertisers();
         $scope.loadAssets();
+        $scope.loadGroups();
     });

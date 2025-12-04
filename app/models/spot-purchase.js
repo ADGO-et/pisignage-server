@@ -28,6 +28,14 @@ var SpotPurchaseSchema = new Schema({
             return total;
         }
     },
+    spotsPerDay: { type: Number }, // Same as totalSpots (spots are per day, not divided)
+
+    // Campaign date range
+    startDate: { type: Date, required: true },
+    endDate: { type: Date, required: true },
+
+    // Target groups for deployment
+    targetGroups: [{ type: Schema.ObjectId, ref: 'Group' }],
 
     // Pricing (optional for future use)
     pricePerSet: { type: Number, default: 0 },
@@ -41,6 +49,15 @@ var SpotPurchaseSchema = new Schema({
     // Status
     active: { type: Boolean, default: true },
     fullyConsumed: { type: Boolean, default: false },
+
+    // Deployment tracking
+    deploymentStatus: {
+        type: String,
+        enum: ['pending', 'deployed', 'error'],
+        default: 'pending'
+    },
+    deployedAt: Date,
+    deploymentError: String,
 
     // Metadata
     purchaseDate: { type: Date, default: Date.now },
@@ -73,8 +90,19 @@ SpotPurchaseSchema.pre('validate', function (next) {
         this.totalPrice = (this.pricePerSet || 0) * sets;
     }
 
+    // Set spotsPerDay (spots are per day, not divided across days)
+    if (this.spotsPerDay === undefined || this.spotsPerDay === null) {
+        this.spotsPerDay = this.totalSpots;
+    }
+
     next();
 });
+
+// Validation for date range
+SpotPurchaseSchema.path('startDate').validate(function (startDate) {
+    if (!this.endDate) return true;
+    return startDate <= this.endDate;
+}, 'Start date must be before or equal to end date');
 
 // Validation
 SpotPurchaseSchema.path('sets').validate(function (sets) {
@@ -89,6 +117,7 @@ SpotPurchaseSchema.path('adAsset.duration').validate(function (duration) {
 SpotPurchaseSchema.pre('save', function (next) {
     if (this.isNew || this.isModified('sets')) {
         this.totalSpots = this.sets * 40;
+        this.spotsPerDay = this.totalSpots; // Spots are per day
         if (this.isNew) {
             this.spotsRemaining = this.totalSpots;
         }

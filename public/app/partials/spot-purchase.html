@@ -2,7 +2,8 @@
     <div class="row">
         <div class="col-md-12">
             <h2>Spot Purchase</h2>
-            <p class="text-muted">Purchase advertising spots for your campaigns (1 set = 40 spots, 1 spot = 20 seconds)
+            <p class="text-muted">Purchase advertising spots for your campaigns (1 set = 40 spots per day, 1 spot = 20
+                seconds)
             </p>
 
             <div class="row">
@@ -51,13 +52,43 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="sets">Number of Sets *</label>
+                                    <label for="startDate">Campaign Start Date *</label>
+                                    <input type="date" class="form-control" id="startDate" ng-model="purchase.startDate"
+                                        ng-change="checkAvailability()" required>
+                                    <p class="help-block">First day ads will be displayed</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="endDate">Campaign End Date *</label>
+                                    <input type="date" class="form-control" id="endDate" ng-model="purchase.endDate"
+                                        ng-change="checkAvailability()" required>
+                                    <p class="help-block">Last day ads will be displayed</p>
+                                </div>
+
+                                <div class="form-group" ng-if="groups.length > 0">
+                                    <label>Target Groups (Select where ads will display) *</label>
+                                    <div class="checkbox" ng-repeat="group in groups">
+                                        <label>
+                                            <input type="checkbox" ng-checked="isGroupSelected(group._id)"
+                                                ng-click="toggleGroup(group._id)">
+                                            {{group.name}}
+                                        </label>
+                                    </div>
+                                    <p class="help-block" ng-if="purchase.targetGroups.length === 0"
+                                        style="color: red;">
+                                        Please select at least one group
+                                    </p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="sets">Number of Sets (Spots Per Day) *</label>
                                     <input type="number" class="form-control" id="sets" ng-model="purchase.sets" min="1"
-                                        required>
+                                        ng-change="checkAvailability()" required>
                                     <p class="help-block">
-                                        1 set = 40 spots. You are purchasing <strong>{{calculateTotalSpots()}}
-                                            spots</strong>
-                                        ({{calculateTotalSpots() * 20}} seconds of ad time).
+                                        1 set = 40 spots <strong>per day</strong>. You are purchasing
+                                        <strong>{{calculateTotalSpots()}}
+                                            spots per day</strong>
+                                        ({{calculateTotalSpots() * 20}} seconds of ad time per day).
                                     </p>
                                 </div>
 
@@ -73,13 +104,49 @@
                                     </p>
                                 </div>
 
+                                <div class="alert alert-info"
+                                    ng-if="purchase.startDate && purchase.endDate && calculateDaysInRange() > 0">
+                                    <strong>📅 Campaign Duration:</strong> {{calculateDaysInRange()}} day(s)
+                                    <br>
+                                    <strong>📊 Spots Per Day:</strong> {{calculateSpotsPerDay()}} spots
+                                    <br>
+                                    <strong>🎯 Total Spots Across Campaign:</strong> {{calculateSpotsPerDay() *
+                                    calculateDaysInRange()}} spots
+                                </div>
+
+                                <div class="alert alert-warning" ng-if="availabilityChecking">
+                                    <i class="fa fa-spinner fa-spin"></i> Checking availability...
+                                </div>
+
+                                <div class="alert alert-success" ng-if="availabilityResult && availabilityResult.valid">
+                                    <i class="glyphicon glyphicon-ok-circle"></i>
+                                    <strong>✓ Spots Available!</strong> All selected days have enough available spots.
+                                </div>
+
+                                <div class="alert alert-danger" ng-if="availabilityResult && !availabilityResult.valid">
+                                    <i class="glyphicon glyphicon-exclamation-sign"></i>
+                                    <strong>✗ Not Enough Spots!</strong>
+                                    <br>{{availabilityResult.message}}
+                                    <ul ng-if="availabilityResult.unavailableDates">
+                                        <li ng-repeat="dateInfo in availabilityResult.unavailableDates">
+                                            {{dateInfo.date | date:'mediumDate'}}:
+                                            Need {{dateInfo.needed}} spots, only {{dateInfo.available}} available
+                                        </li>
+                                    </ul>
+                                </div>
+
                                 <div class="well">
                                     <h4>Purchase Summary</h4>
                                     <ul>
                                         <li><strong>Sets:</strong> {{purchase.sets}}</li>
-                                        <li><strong>Total Spots:</strong> {{calculateTotalSpots()}} spots</li>
-                                        <li><strong>Total Duration:</strong> {{calculateTotalSpots() * 20}} seconds
-                                            ({{(calculateTotalSpots() * 20 / 60).toFixed(1)}} minutes)</li>
+                                        <li><strong>Spots Per Day:</strong> {{calculateSpotsPerDay()}} spots</li>
+                                        <li><strong>Campaign Days:</strong> {{calculateDaysInRange()}} day(s)</li>
+                                        <li><strong>Total Spots:</strong> {{calculateSpotsPerDay() *
+                                            calculateDaysInRange()}} spots</li>
+                                        <li><strong>Total Duration:</strong> {{calculateSpotsPerDay() *
+                                            calculateDaysInRange() * 20}} seconds
+                                            ({{(calculateSpotsPerDay() * calculateDaysInRange() * 20 / 60).toFixed(1)}}
+                                            minutes)</li>
                                         <li ng-if="purchase.pricePerSet > 0"><strong>Total Price:</strong>
                                             ETB {{calculateTotalPrice().toFixed(2)}}</li>
                                     </ul>
@@ -87,9 +154,9 @@
 
                                 <div class="form-group">
                                     <button type="submit" class="btn btn-primary btn-lg"
-                                        ng-disabled="purchaseForm.$invalid || loading">
+                                        ng-disabled="purchaseForm.$invalid || loading || purchase.targetGroups.length === 0 || (availabilityResult && !availabilityResult.valid)">
                                         <i class="glyphicon glyphicon-shopping-cart"></i>
-                                        Purchase {{calculateTotalSpots()}} Spots
+                                        Purchase {{calculateSpotsPerDay() * calculateDaysInRange()}} Spots
                                     </button>
                                 </div>
                             </form>
@@ -119,7 +186,7 @@
                                             <th>Date</th>
                                             <th>Asset</th>
                                             <th>Spots</th>
-                                            <th>Remaining</th>
+                                            <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -130,9 +197,9 @@
                                                 <span class="badge badge-info">{{p.totalSpots}}</span>
                                             </td>
                                             <td class="text-center">
-                                                <span class="badge"
-                                                    ng-class="{'badge-success': p.spotsRemaining > 0, 'badge-default': p.spotsRemaining === 0}">
-                                                    {{p.spotsRemaining}}
+                                                <span class="label"
+                                                    ng-class="{'label-warning': p.deploymentStatus === 'pending', 'label-success': p.deploymentStatus === 'deployed', 'label-danger': p.deploymentStatus === 'error'}">
+                                                    {{p.deploymentStatus}}
                                                 </span>
                                             </td>
                                         </tr>

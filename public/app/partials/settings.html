@@ -187,10 +187,18 @@
               <i class="glyphicon glyphicon-floppy-disk"></i> Save Time Window
             </button>
             <div class="alert alert-success" style="margin-top: 10px;" ng-show="settings.adTimeWindow.enabled && settings.adTimeWindow.startTime && settings.adTimeWindow.endTime">
-              <strong>Active Window:</strong> Advertisements will display from 
-              <strong>{{settings.adTimeWindow.startTime}}</strong> to 
-              <strong>{{settings.adTimeWindow.endTime}}</strong> daily.
-            </div>
+              <i class="glyphicon glyphicon-ok-circle"></i>
+              <strong> Active Window:</strong> Advertisements will display from
+              <strong>{{formatTime12Hour(settings.adTimeWindow.startTime)}}</strong> to
+              <strong>{{formatTime12Hour(settings.adTimeWindow.endTime)}}</strong> daily.
+              <br><br>
+              <i class="glyphicon glyphicon-stats"></i>
+              <strong> Total Available Spots:</strong> <strong>{{calculateDailySpots()}}</strong> spots per day
+              <br>
+              <small class="text-muted">
+                (Each spot = 20 seconds | Calculation: {{calculateDailySpots()}} spots =
+                {{(calculateDailySpots() * 20 / 3600).toFixed(1)}} hours of ad time)
+              </small>
           </div>
         </div>
       </form>
