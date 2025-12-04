@@ -6,6 +6,7 @@ var mongoose = require('mongoose'),
     Asset = mongoose.model('Asset'),
     rest = require('../others/restware'),
     spotAvailability = require('./spot-availability'),
+    campaignUtils = require('../others/campaign-utils'),
     _ = require('lodash');
 
 // Purchase spots for an advertiser
@@ -53,8 +54,20 @@ exports.purchaseSpots = function (req, res) {
             return rest.sendError(res, 'Advertiser not found', err);
         }
 
-        var totalSpots = purchaseData.sets * 40;
-        var spotsPerDay = totalSpots; // Spots are per day, not divided
+        var quantities = campaignUtils.calculateSpotTotals(purchaseData.sets, startDate, endDate, purchaseData.weekdays);
+        var normalizedWeekdays = quantities.weekdays;
+
+        if (!campaignUtils.hasSelectedWeekday(normalizedWeekdays)) {
+            return rest.sendError(res, 'Please select at least one weekday');
+        }
+
+        if (!quantities.campaignDays) {
+            return rest.sendError(res, 'Campaign must include at least one valid day in the selected range');
+        }
+
+        var spotsPerDay = quantities.spotsPerDay;
+        var totalSpots = quantities.totalSpots;
+        var campaignDays = quantities.campaignDays;
         var pricePerSet = purchaseData.pricePerSet || 0;
 
         // Validate spot availability for the date range
@@ -83,9 +96,11 @@ exports.purchaseSpots = function (req, res) {
                     totalSpots: totalSpots,
                     spotsRemaining: totalSpots,
                     spotsPerDay: spotsPerDay,
+                    campaignDays: campaignDays,
                     startDate: startDate,
                     endDate: endDate,
                     targetGroups: purchaseData.targetGroups || [],
+                    weekdays: normalizedWeekdays,
                     pricePerSet: pricePerSet,
                     totalPrice: pricePerSet * purchaseData.sets,
                     deploymentStatus: 'pending',
@@ -310,8 +325,20 @@ exports.updatePurchase = function (req, res) {
             }
 
             var sets = updatedData.sets;
-            var totalSpots = sets * 40;
-            var spotsPerDay = totalSpots;
+            var quantities = campaignUtils.calculateSpotTotals(sets, startDate, endDate, updatedData.weekdays || purchase.weekdays);
+            var normalizedWeekdays = quantities.weekdays;
+
+            if (!campaignUtils.hasSelectedWeekday(normalizedWeekdays)) {
+                return rest.sendError(res, 'Please select at least one weekday');
+            }
+
+            if (!quantities.campaignDays) {
+                return rest.sendError(res, 'Campaign must include at least one valid day in the selected range');
+            }
+
+            var totalSpots = quantities.totalSpots;
+            var spotsPerDay = quantities.spotsPerDay;
+            var campaignDays = quantities.campaignDays;
             var pricePerSet = updatedData.pricePerSet || 0;
 
             spotAvailability.validatePurchaseAvailability(
@@ -333,10 +360,11 @@ exports.updatePurchase = function (req, res) {
                     purchase.totalSpots = totalSpots;
                     purchase.spotsPerDay = spotsPerDay;
                     purchase.spotsRemaining = totalSpots;
+                    purchase.campaignDays = campaignDays;
+                    purchase.weekdays = normalizedWeekdays;
                     purchase.startDate = startDate;
                     purchase.endDate = endDate;
                     purchase.targetGroups = updatedData.targetGroups;
-                    purchase.weekdays = updatedData.weekdays || purchase.weekdays;
                     purchase.pricePerSet = pricePerSet;
                     purchase.totalPrice = pricePerSet * sets;
                     purchase.expirationDate = updatedData.expirationDate;

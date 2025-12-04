@@ -1,5 +1,6 @@
 var mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
+    Schema = mongoose.Schema,
+    campaignUtils = require('../others/campaign-utils');
 
 var SpotPurchaseSchema = new Schema({
     advertiser: {
@@ -28,7 +29,8 @@ var SpotPurchaseSchema = new Schema({
             return total;
         }
     },
-    spotsPerDay: { type: Number }, // Same as totalSpots (spots are per day, not divided)
+    spotsPerDay: { type: Number }, // Spots allocated per day
+    campaignDays: { type: Number, default: 1 },
 
     // Campaign date range
     startDate: { type: Date, required: true },
@@ -82,29 +84,42 @@ var SpotPurchaseSchema = new Schema({
     usePushEach: true
 });
 
+function shouldRecalculate(doc) {
+    return doc.isNew ||
+        doc.isModified('sets') ||
+        doc.isModified('startDate') ||
+        doc.isModified('endDate') ||
+        doc.isModified('weekdays');
+}
+
 // Ensure computed fields exist before validation runs
 SpotPurchaseSchema.pre('validate', function (next) {
-    var sets = this.sets || 0;
+    var doc = this;
+    doc.weekdays = campaignUtils.normalizeWeekdays(doc.weekdays);
 
-    // Always calculate totalSpots if not explicitly set or if it's undefined/null
-    if (this.totalSpots === undefined || this.totalSpots === null) {
-        this.totalSpots = sets * 40;
+    if (!campaignUtils.hasSelectedWeekday(doc.weekdays)) {
+        return next(new Error('Please select at least one weekday for this campaign'));
     }
 
-    // For new documents, set spotsRemaining to totalSpots if not set
-    if (this.isNew && (this.spotsRemaining === undefined || this.spotsRemaining === null)) {
-        this.spotsRemaining = this.totalSpots;
+    if (shouldRecalculate(doc)) {
+        var quantities = campaignUtils.calculateSpotTotals(doc.sets || 0, doc.startDate, doc.endDate, doc.weekdays);
+
+        if (!quantities.campaignDays) {
+            return next(new Error('Campaign must include at least one valid day within the selected range'));
+        }
+
+        doc.spotsPerDay = quantities.spotsPerDay;
+        doc.campaignDays = quantities.campaignDays;
+        doc.totalSpots = quantities.totalSpots;
+        doc.spotsRemaining = doc.totalSpots;
     }
 
-    // Calculate totalPrice if not set
-    if (this.totalPrice === undefined || this.totalPrice === null) {
-        this.totalPrice = (this.pricePerSet || 0) * sets;
+    if (doc.totalPrice === undefined || doc.totalPrice === null || doc.isModified('pricePerSet') || doc.isModified('sets')) {
+        doc.totalPrice = (doc.pricePerSet || 0) * (doc.sets || 0);
     }
 
-    // Set spotsPerDay (spots are per day, not divided across days)
-    if (this.spotsPerDay === undefined || this.spotsPerDay === null) {
-        this.spotsPerDay = this.totalSpots;
-    }
+    doc.fullyConsumed = doc.spotsRemaining <= 0;
+    doc.active = !doc.fullyConsumed;
 
     next();
 });
@@ -126,24 +141,10 @@ SpotPurchaseSchema.path('adAsset.duration').validate(function (duration) {
 
 // Pre-save hook to calculate total spots
 SpotPurchaseSchema.pre('save', function (next) {
-    if (this.isNew || this.isModified('sets')) {
-        this.totalSpots = this.sets * 40;
-        this.spotsPerDay = this.totalSpots; // Spots are per day
-        if (this.isNew) {
-            this.spotsRemaining = this.totalSpots;
-        }
-    }
-
-    if (this.isModified('pricePerSet') || this.isModified('sets')) {
-        this.totalPrice = this.pricePerSet * this.sets;
-    }
-
-    // Mark as fully consumed if no spots remaining
     if (this.spotsRemaining <= 0) {
         this.fullyConsumed = true;
         this.active = false;
     }
-
     next();
 });
 

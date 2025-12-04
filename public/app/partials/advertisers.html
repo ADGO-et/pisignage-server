@@ -28,6 +28,7 @@
                                 <th>Name</th>
                                 <th>Contact</th>
                                 <th>Spots Purchased / Day</th>
+                                <th>Total Spots Purchased</th>
                                 <th>Spots Remaining / Day</th>
                                 <th>Status</th>
                                 <th>Actions</th>
@@ -45,7 +46,12 @@
                                     <span class="badge badge-info" title="Daily spots allocated to active campaigns">
                                         {{advertiser.activeSpotsPerDay || 0}}
                                     </span>
-                                    <div><small class="text-muted">Lifetime: {{advertiser.totalSpotsPurchased || 0}}</small></div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge badge-primary" title="Total spots purchased across all campaigns">
+                                        {{advertiser.totalSpotsPurchased || 0}}
+                                    </span>
+                                    <div><small class="text-muted">Remaining: {{advertiser.totalSpotsRemaining || 0}}</small></div>
                                 </td>
                                 <td class="text-center">
                                     <div ng-if="advertiser.dailySpotsCapacity && advertiser.dailySpotsCapacity > 0">
