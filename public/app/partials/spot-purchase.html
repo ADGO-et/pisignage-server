@@ -79,6 +79,39 @@
                                         Please select at least one group
                                     </p>
                                 </div>
+                                <div class="form-group">
+                                    <label>Days of the Week (Select which days ads will display) *</label>
+                                    <div class="checkbox-inline" style="display: block;">
+                                        <label class="checkbox-inline">
+                                            <input type="checkbox" ng-model="purchase.weekdays[1]" ng-change="checkAvailability()"> Monday
+                                        </label>
+                                        <label class="checkbox-inline">
+                                            <input type="checkbox" ng-model="purchase.weekdays[2]" ng-change="checkAvailability()"> Tuesday
+                                        </label>
+                                        <label class="checkbox-inline">
+                                            <input type="checkbox" ng-model="purchase.weekdays[3]" ng-change="checkAvailability()"> Wednesday
+                                        </label>
+                                        <label class="checkbox-inline">
+                                            <input type="checkbox" ng-model="purchase.weekdays[4]" ng-change="checkAvailability()"> Thursday
+                                        </label>
+                                        <label class="checkbox-inline">
+                                            <input type="checkbox" ng-model="purchase.weekdays[5]" ng-change="checkAvailability()"> Friday
+                                        </label>
+                                        <label class="checkbox-inline">
+                                            <input type="checkbox" ng-model="purchase.weekdays[6]" ng-change="checkAvailability()"> Saturday
+                                        </label>
+                                        <label class="checkbox-inline">
+                                            <input type="checkbox" ng-model="purchase.weekdays[7]" ng-change="checkAvailability()"> Sunday
+                                        </label>
+                                    </div>
+                                    <p class="help-block">
+                                        Ads will only display on selected days. If a day is unchecked and falls within your campaign dates, it will be excluded from the campaign.
+                                    </p>
+                                    <p class="help-block" ng-if="getSelectedWeekdaysCount() === 0" style="color: red;">
+                                        Please select at least one day
+                                    </p>
+                                </div>
+
 
                                 <div class="form-group">
                                     <label for="sets">Number of Sets (Spots Per Day) *</label>

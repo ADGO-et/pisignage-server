@@ -1,0 +1,33 @@
+<div class="modal-header"
+    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px 6px 0 0; border: none;">
+    <h3 class="modal-title" style="margin: 0; font-weight: 600;">
+        <i class="glyphicon glyphicon-cog" style="margin-right: 10px;"></i>
+        Account Setup
+    </h3>
+</div>
+<div class="modal-body" style="padding: 30px;">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <i class="glyphicon glyphicon-user" style="font-size: 48px; color: #667eea;"></i>
+    </div>
+    <p style="text-align: center; color: #666; margin-bottom: 25px; font-size: 15px;">
+        Please enter your account name from <strong>pisignage.com</strong>
+    </p>
+    <div class="form-group">
+        <label for="accountName" style="font-weight: 600; color: #333; margin-bottom: 8px;">Account Name</label>
+        <input class="form-control" type="text" id="accountName" name="user" ng-model="serverConfig.installation"
+            required placeholder="Enter your account name"
+            style="height: 45px; font-size: 16px; border: 2px solid #e0e0e0; border-radius: 6px; transition: border-color 0.3s;"
+            onfocus="this.style.borderColor='#667eea'" onblur="this.style.borderColor='#e0e0e0'">
+    </div>
+</div>
+<div class="modal-footer" style="border-top: 1px solid #e0e0e0; padding: 20px; background: #f8f9fa;">
+    <button ng-click="save()" class="btn btn-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                 color: white; border: none; padding: 12px 40px; 
+                 border-radius: 6px; font-weight: 600; 
+                 box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                 transition: transform 0.2s, box-shadow 0.2s;"
+        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.5)'"
+        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.4)'">
+        <i class="glyphicon glyphicon-ok"></i> Save & Continue
+    </button>
+</div>

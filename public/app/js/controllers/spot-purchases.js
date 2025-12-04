@@ -17,7 +17,16 @@ angular.module('piSpotPurchases.controllers', [])
             pricePerSet: 0,
             startDate: null,
             endDate: null,
-            targetGroups: []
+            targetGroups: [],
+            weekdays: {
+                1: true, // Monday
+                2: true, // Tuesday
+                3: true, // Wednesday
+                4: true, // Thursday
+                5: true, // Friday
+                6: true, // Saturday
+                7: true  // Sunday
+            }
         };
 
         $scope.loading = false;
@@ -80,14 +89,39 @@ angular.module('piSpotPurchases.controllers', [])
             return $scope.calculateTotalSpots();
         };
 
-        // Calculate days in range
+        // Calculate days in range (excluding unselected weekdays)
         $scope.calculateDaysInRange = function () {
             if (!$scope.purchase.startDate || !$scope.purchase.endDate) return 0;
             var start = new Date($scope.purchase.startDate);
             var end = new Date($scope.purchase.endDate);
-            var diffTime = Math.abs(end - start);
-            var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-            return diffDays;
+
+            var totalDays = 0;
+            var currentDate = new Date(start);
+
+            while (currentDate <= end) {
+                // Get day of week (1=Monday, 7=Sunday)
+                var dayOfWeek = currentDate.getDay();
+                // Convert JS day (0=Sunday, 6=Saturday) to our format (1=Monday, 7=Sunday)
+                var ourDayFormat = dayOfWeek === 0 ? 7 : dayOfWeek;
+
+                // Check if this day is selected
+                if ($scope.purchase.weekdays[ourDayFormat]) {
+                    totalDays++;
+                }
+
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            return totalDays;
+        };
+
+        // Get count of selected weekdays
+        $scope.getSelectedWeekdaysCount = function () {
+            var count = 0;
+            for (var day in $scope.purchase.weekdays) {
+                if ($scope.purchase.weekdays[day]) count++;
+            }
+            return count;
         };
 
         // Calculate total price

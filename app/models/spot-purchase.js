@@ -34,6 +34,18 @@ var SpotPurchaseSchema = new Schema({
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
 
+    // Days of week when ads should display (1=Monday, 7=Sunday)
+    weekdays: {
+        type: Map,
+        of: Boolean,
+        default: function () {
+            return new Map([
+                [1, true], [2, true], [3, true], [4, true],
+                [5, true], [6, true], [7, true]
+            ]);
+        }
+    },
+
     // Target groups for deployment
     targetGroups: [{ type: Schema.ObjectId, ref: 'Group' }],
 

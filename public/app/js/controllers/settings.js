@@ -60,19 +60,43 @@ angular.module('piSettings.controllers', []).
         //settings part
         $http.get(piUrls.settings)
             .success(function (data) {
-                if (data.success)
+                if (data.success) {
                     $scope.settings = data.data;
+
+                    // Convert ISO date strings to HH:MM format for time inputs
+                    if ($scope.settings.adTimeWindow) {
+                        if ($scope.settings.adTimeWindow.startTime) {
+                            $scope.settings.adTimeWindow.startTime = extractTimeFromISO($scope.settings.adTimeWindow.startTime);
+                        }
+                        if ($scope.settings.adTimeWindow.endTime) {
+                            $scope.settings.adTimeWindow.endTime = extractTimeFromISO($scope.settings.adTimeWindow.endTime);
+                        }
+                    }
+                }
 
             }).error(function (err) {
                 console.log(err);
             })
 
         $scope.saveSettings = function () {
-            $http.post(piUrls.settings, $scope.settings)
+            // Create a copy to avoid modifying the original
+            var settingsToSave = angular.copy($scope.settings);
+
+            // Ensure time is in HH:MM format (not ISO date)
+            if (settingsToSave.adTimeWindow) {
+                if (settingsToSave.adTimeWindow.startTime) {
+                    settingsToSave.adTimeWindow.startTime = extractTimeFromISO(settingsToSave.adTimeWindow.startTime);
+                }
+                if (settingsToSave.adTimeWindow.endTime) {
+                    settingsToSave.adTimeWindow.endTime = extractTimeFromISO(settingsToSave.adTimeWindow.endTime);
+                }
+            }
+
+            $http.post(piUrls.settings, settingsToSave)
                 .success(function (data, status) {
                     if (data.success) {
                     }
-                    //if ($scope.settingsForm.user.$dirty) {
+                    //if ($scope.settingsForm.$pristine) {
                     $scope.settingsForm.$setPristine();
                     $scope.loadMsg = "reloading..."
                     setTimeout($window.location.reload.bind($window.location), 2000);
@@ -80,6 +104,26 @@ angular.module('piSettings.controllers', []).
                 })
                 .error(function (data, status) {
                 });
+        }
+
+        // Helper function to extract HH:MM from ISO date or return as-is if already in HH:MM format
+        function extractTimeFromISO(timeStr) {
+            if (!timeStr) return '';
+
+            // If it's already in HH:MM format, return it
+            if (/^\d{2}:\d{2}$/.test(timeStr)) {
+                return timeStr;
+            }
+
+            // If it's an ISO date string, extract the time
+            if (timeStr.indexOf('T') !== -1) {
+                var date = new Date(timeStr);
+                var hours = ('0' + date.getUTCHours()).slice(-2);
+                var minutes = ('0' + date.getUTCMinutes()).slice(-2);
+                return hours + ':' + minutes;
+            }
+
+            return timeStr;
         }
 
         // Convert 24-hour time to 12-hour AM/PM format
@@ -103,8 +147,8 @@ angular.module('piSettings.controllers', []).
                 return 0;
             }
 
-            var startTime = $scope.settings.adTimeWindow.startTime;
-            var endTime = $scope.settings.adTimeWindow.endTime;
+            var startTime = extractTimeFromISO($scope.settings.adTimeWindow.startTime);
+            var endTime = extractTimeFromISO($scope.settings.adTimeWindow.endTime);
 
             var startParts = startTime.split(':');
             var endParts = endTime.split(':');

@@ -129,21 +129,12 @@ exports.deleteObject = function (req, res) {
 
     var advertiser = req.advertiser;
 
-    // Check if advertiser has active spot purchases
-    SpotPurchase.getActivePurchases(advertiser._id, function (err, purchases) {
+    // Delete advertiser (spot purchases remain for historical tracking)
+    advertiser.remove(function (err) {
         if (err)
-            return rest.sendError(res, 'Error checking advertiser purchases', err);
-
-        if (purchases && purchases.length > 0) {
-            return rest.sendError(res, 'Cannot delete advertiser with active spot purchases. Please deactivate or complete all purchases first.');
-        }
-
-        advertiser.remove(function (err) {
-            if (err)
-                return rest.sendError(res, 'Unable to remove advertiser', err);
-            else
-                return rest.sendSuccess(res, 'Advertiser deleted successfully');
-        });
+            return rest.sendError(res, 'Unable to remove advertiser', err);
+        else
+            return rest.sendSuccess(res, 'Advertiser deleted successfully');
     });
 };
 

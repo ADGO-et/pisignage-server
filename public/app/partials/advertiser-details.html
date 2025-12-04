@@ -66,73 +66,18 @@
                     </div>
                 </div>
 
+
                 <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h4>Valid Time Range</h4>
-                        <p class="text-muted">Define when this advertiser's ads are eligible to be played</p>
-                    </div>
                     <div class="panel-body">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label>Days of Week *</label>
-                                    <div>
-                                        <button type="button" class="btn btn-sm btn-default"
-                                            ng-click="selectAllWeekdays()">Select All</button>
-                                        <button type="button" class="btn btn-sm btn-default"
-                                            ng-click="deselectAllWeekdays()">Deselect All</button>
-                                    </div>
-                                    <div class="checkbox-group" style="margin-top: 10px;">
-                                        <label class="checkbox-inline" ng-repeat="day in weekdayOptions">
-                                            <input type="checkbox" ng-checked="isWeekdaySelected(day.id)"
-                                                ng-click="toggleWeekday(day.id)">
-                                            {{day.label}}
-                                        </label>
-                                    </div>
-                                    <p class="help-block" ng-if="advertiser.validTimeRange.weekdays.length === 0"
-                                        style="color: red;">
-                                        Please select at least one weekday
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="startDate">Start Date *</label>
-                                    <input type="date" class="form-control" id="startDate"
-                                        ng-model="advertiser.validTimeRange.startDate" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="endDate">End Date *</label>
-                                    <input type="date" class="form-control" id="endDate"
-                                        ng-model="advertiser.validTimeRange.endDate" required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="alert alert-info">
-                            <i class="glyphicon glyphicon-info-sign"></i>
-                            <strong>Preview:</strong> Ads will be eligible to play on
-                            <strong>{{advertiser.validTimeRange.weekdays.length === 7 ? 'all days' :
-                                advertiser.validTimeRange.weekdays.length + ' selected days'}}</strong>
-                            from <strong>{{advertiser.validTimeRange.startDate | date:'mediumDate'}}</strong> to
-                            <strong>{{advertiser.validTimeRange.endDate | date:'mediumDate'}}</strong>.
-                            <br><small class="text-muted">Note: Display times are controlled by system settings.</small>
-                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg" ng-disabled="advertiserForm.$invalid">
+                            <i class="glyphicon glyphicon-save"></i>
+                            {{isEdit ? 'Update' : 'Create'}} Advertiser
+                        </button>
+                        <button type="button" class="btn btn-default btn-lg" ng-click="cancel()">
+                            <i class="glyphicon glyphicon-remove"></i>
+                            Cancel
+                        </button>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary" ng-disabled="advertiserForm.$invalid || loading">
-                        <i class="glyphicon glyphicon-save"></i> {{isEdit ? 'Update' : 'Create'}} Advertiser
-                    </button>
-                    <button type="button" class="btn btn-default" ng-click="cancel()">
-                        <i class="glyphicon glyphicon-remove"></i> Cancel
-                    </button>
                 </div>
             </form>
         </div>
