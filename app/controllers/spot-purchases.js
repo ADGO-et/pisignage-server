@@ -71,14 +71,6 @@ exports.purchaseSpots = function (req, res) {
                 if (!validation.valid) {
                     return rest.sendError(res, validation.message, validation.unavailableDates);
                 }
-                    var advObjectId;
-                    try {
-                            advObjectId = typeof purchaseData.advertiserId === 'string' ? mongoose.Types.ObjectId(purchaseData.advertiserId) : purchaseData.advertiserId;
-                    } catch (e) {
-                        return callback ? callback(e) : null;
-                    }
-
-                    SpotPurchase.find({ 'advertiser._id': advObjectId, active: true }, 'totalSpots spotsRemaining', function (err, purchases) {
 
                 // Create spot purchase
                 var purchase = new SpotPurchase({
