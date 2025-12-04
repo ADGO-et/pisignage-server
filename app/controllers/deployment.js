@@ -4,7 +4,7 @@ var mongoose = require('mongoose'),
     SpotPurchase = mongoose.model('SpotPurchase'),
     Advertiser = mongoose.model('Advertiser'),
     Group = mongoose.model('Group'),
-    Playlist = mongoose.model('Playlist'),
+    // Playlist model will be accessed via mongoose.model('Playlist') inside functions
     Settings = mongoose.model('Settings'),
     rest = require('../others/restware'),
     _ = require('lodash');
@@ -171,6 +171,9 @@ function deployPurchase(purchase, settings, callback) {
  */
 function createDailyAdPlaylist(group, date, settings, callback) {
     var dateStr = date.toISOString().split('T')[0];
+
+    // Get Playlist model dynamically to avoid loading order issues
+    var Playlist = mongoose.model('Playlist');
 
     // Get all deployed purchases active on this date for this group
     SpotPurchase.find({
