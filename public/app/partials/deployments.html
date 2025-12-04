@@ -92,11 +92,16 @@
                                         <div class="text-danger" ng-if="p.deploymentError">{{p.deploymentError}}</div>
                                     </td>
                                     <td>
+                                        <button class="btn btn-xs btn-primary" ng-if="activeTab === 'pending'"
+                                            ng-click="editPurchase(p._id)">
+                                            <i class="glyphicon glyphicon-edit"></i> Edit
+                                        </button>
                                         <button class="btn btn-xs btn-warning" ng-if="activeTab === 'error'"
                                             ng-click="redeployPurchase(p._id)">
                                             <i class="glyphicon glyphicon-repeat"></i> Retry
                                         </button>
-                                        <span class="text-muted" ng-if="activeTab !== 'error'">—</span>
+                                        <span class="text-muted"
+                                            ng-if="activeTab !== 'error' && activeTab !== 'pending'">—</span>
                                     </td>
                                 </tr>
                             </tbody>

@@ -90,7 +90,7 @@ exports.index = function (req, res) {
                     console.log('Error loading settings for advertiser stats:', settingsErr);
                 }
 
-                var dailySpots = spotAvailability.calculateDailySpots(settings);
+                var dailySpots = spotAvailability.calculateDailySpots(settings) || 0;
                 var statsMap = {};
 
                 (stats || []).forEach(function (stat) {
@@ -106,7 +106,7 @@ exports.index = function (req, res) {
                     advObj.dailySpotsCapacity = dailySpots;
                     advObj.dailySpotsRemaining = dailySpots > 0
                         ? Math.max(0, dailySpots - advObj.activeSpotsPerDay)
-                        : null;
+                        : 0;
                     return advObj;
                 });
 
@@ -131,7 +131,7 @@ exports.getObject = function (req, res) {
                     console.log('Error loading settings for advertiser detail stats:', settingsErr);
                 }
 
-                var dailySpots = spotAvailability.calculateDailySpots(settings);
+                var dailySpots = spotAvailability.calculateDailySpots(settings) || 0;
                 var today = new Date();
                 today.setHours(0, 0, 0, 0);
                 var activeStatuses = ['pending', 'deployed'];
@@ -164,7 +164,8 @@ exports.getObject = function (req, res) {
                 response.dailySpotsCapacity = dailySpots;
                 response.dailySpotsRemaining = dailySpots > 0
                     ? Math.max(0, dailySpots - totals.activeSpotsPerDay)
-                    : null;
+                    : 0;
+                response.activeSpotsPerDay = totals.activeSpotsPerDay;
 
                 return rest.sendSuccess(res, 'Advertiser details', response);
             });

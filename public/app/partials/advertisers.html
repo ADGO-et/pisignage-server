@@ -27,9 +27,8 @@
                             <tr>
                                 <th>Name</th>
                                 <th>Contact</th>
-                                <th>Valid Time Range</th>
-                                <th>Spots Purchased</th>
-                                <th>Spots Remaining</th>
+                                <th>Spots Purchased / Day</th>
+                                <th>Spots Remaining / Day</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -42,14 +41,11 @@
                                     <div ng-if="advertiser.contactEmail"><small>{{advertiser.contactEmail}}</small>
                                     </div>
                                 </td>
-                                <td>
-                                    <small>{{formatTimeRange(advertiser)}}</small>
-                                </td>
                                 <td class="text-center">
-                                    <span class="badge badge-info" title="Total active spots purchased">
-                                        {{advertiser.totalSpotsPurchased || 0}}
+                                    <span class="badge badge-info" title="Daily spots allocated to active campaigns">
+                                        {{advertiser.activeSpotsPerDay || 0}}
                                     </span>
-                                    <div><small class="text-muted">lifetime</small></div>
+                                    <div><small class="text-muted">Lifetime: {{advertiser.totalSpotsPurchased || 0}}</small></div>
                                 </td>
                                 <td class="text-center">
                                     <div ng-if="advertiser.dailySpotsCapacity && advertiser.dailySpotsCapacity > 0">

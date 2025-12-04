@@ -1,7 +1,7 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-12">
-            <h2>Spot Purchase</h2>
+            <h2>{{isEditing ? 'Edit Spot Purchase' : 'Spot Purchase'}}</h2>
             <p class="text-muted">Purchase advertising spots for your campaigns (1 set = 40 spots per day, 1 spot = 20
                 seconds)
             </p>
@@ -13,17 +13,24 @@
                             <h4>Purchase Spots</h4>
                         </div>
                         <div class="panel-body">
+                            <div class="alert alert-warning" ng-if="isEditing">
+                                <i class="glyphicon glyphicon-info-sign"></i>
+                                Editing an existing pending purchase. Advertiser cannot be changed, but you may adjust dates, assets, and spot counts.
+                            </div>
                             <form name="purchaseForm" ng-submit="purchaseSpots()" novalidate>
                                 <div class="form-group">
                                     <label for="advertiser">Select Advertiser *</label>
                                     <select class="form-control" id="advertiser" ng-model="purchase.advertiserId"
-                                        ng-change="onAdvertiserSelected()" required>
+                                        ng-change="onAdvertiserSelected()" ng-disabled="isEditing" required>
                                         <option value="">-- Select Advertiser --</option>
                                         <option ng-repeat="adv in advertisers" value="{{adv._id}}">
                                             {{adv.name}}
                                             ({{adv.dailySpotsCapacity ? (adv.dailySpotsRemaining || 0) + ' / ' + adv.dailySpotsCapacity + ' daily spots remaining' : 'configure ad time window'}})
                                         </option>
                                     </select>
+                                    <p class="help-block" ng-if="isEditing">
+                                        Advertiser is fixed while editing an existing purchase.
+                                    </p>
                                 </div>
 
                                 <div ng-if="selectedAdvertiser" class="alert alert-info">
@@ -189,8 +196,13 @@
                                 <div class="form-group">
                                     <button type="submit" class="btn btn-primary btn-lg"
                                         ng-disabled="purchaseForm.$invalid || loading || purchase.targetGroups.length === 0 || (availabilityResult && !availabilityResult.valid)">
-                                        <i class="glyphicon glyphicon-shopping-cart"></i>
-                                        Purchase {{calculateSpotsPerDay() * calculateDaysInRange()}} Spots
+                                        <i class="glyphicon" ng-class="{'glyphicon-save': isEditing, 'glyphicon-shopping-cart': !isEditing}"></i>
+                                        {{isEditing ? 'Update Purchase' : 'Purchase ' + (calculateSpotsPerDay() * calculateDaysInRange()) + ' Spots'}}
+                                    </button>
+                                    <button type="button" class="btn btn-default btn-lg" ng-if="isEditing"
+                                        ng-click="cancelEdit()">
+                                        <i class="glyphicon glyphicon-remove"></i>
+                                        Cancel Edit
                                     </button>
                                 </div>
                             </form>

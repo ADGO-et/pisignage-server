@@ -52,29 +52,6 @@ angular.module('piAdvertisers.controllers', [])
             });
         };
 
-        // Format time range for display
-        $scope.formatTimeRange = function (advertiser) {
-            if (!advertiser.validTimeRange) return 'Not configured';
-
-            var tr = advertiser.validTimeRange;
-            var days = formatWeekdays(tr.weekdays);
-            var dates = formatDate(tr.startDate) + ' - ' + formatDate(tr.endDate);
-            var times = tr.startTime + ' - ' + tr.endTime;
-
-            return days + ', ' + dates + ', ' + times;
-        };
-
-        function formatWeekdays(weekdays) {
-            if (!weekdays || weekdays.length === 7) return 'All days';
-            var dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            return weekdays.map(function (d) { return dayNames[d - 1]; }).join(', ');
-        }
-
-        function formatDate(dateStr) {
-            var date = new Date(dateStr);
-            return date.toLocaleDateString();
-        }
-
         // Load advertisers on init
         $scope.loadAdvertisers();
     })

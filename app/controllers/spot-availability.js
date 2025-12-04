@@ -43,7 +43,8 @@ exports.calculateDailySpots = function (settings) {
  * Get remaining spots for each day in a date range
  * Returns object with date as key and remaining spots as value
  */
-exports.getRemainingSpotsByDate = function (startDate, endDate, callback) {
+exports.getRemainingSpotsByDate = function (startDate, endDate, callback, options) {
+    options = options || {};
     // Get settings to calculate daily spots
     Settings.findOne({}, function (err, settings) {
         if (err) return callback(err);
@@ -62,6 +63,13 @@ exports.getRemainingSpotsByDate = function (startDate, endDate, callback) {
             endDate: { $gte: startDate }
         }, function (err, purchases) {
             if (err) return callback(err);
+
+            if (options.excludePurchaseId) {
+                var excludeId = options.excludePurchaseId.toString();
+                purchases = purchases.filter(function (purchase) {
+                    return purchase._id.toString() !== excludeId;
+                });
+            }
 
             // Calculate remaining spots for each day
             var result = {};
@@ -98,7 +106,7 @@ exports.getRemainingSpotsByDate = function (startDate, endDate, callback) {
 /**
  * Validate if enough spots are available for a purchase
  */
-exports.validatePurchaseAvailability = function (advertiserId, startDate, endDate, spotsPerDay, callback) {
+exports.validatePurchaseAvailability = function (advertiserId, startDate, endDate, spotsPerDay, callback, options) {
     exports.getRemainingSpotsByDate(startDate, endDate, function (err, remainingByDate) {
         if (err) return callback(err);
 
@@ -123,7 +131,7 @@ exports.validatePurchaseAvailability = function (advertiserId, startDate, endDat
         }
 
         callback(null, { valid: true, message: 'Spots available for all selected days' });
-    });
+    }, options);
 };
 
 /**
@@ -151,6 +159,11 @@ exports.checkAvailability = function (req, res) {
     var startDate = req.body.startDate;
     var endDate = req.body.endDate;
     var spotsPerDay = req.body.spotsPerDay;
+    var options = null;
+
+    if (req.body.excludePurchaseId) {
+        options = { excludePurchaseId: req.body.excludePurchaseId };
+    }
 
     if (!startDate || !endDate) {
         return rest.sendError(res, 'Start date and end date are required');
@@ -164,5 +177,5 @@ exports.checkAvailability = function (req, res) {
         if (err) return rest.sendError(res, 'Error checking availability', err);
 
         return rest.sendSuccess(res, 'Availability check', result);
-    });
+    }, options);
 };

@@ -2,7 +2,7 @@
 
 angular.module('piDeployments.controllers', [])
 
-    .controller('DeploymentsCtrl', function ($scope, $http, piUrls, piPopup) {
+    .controller('DeploymentsCtrl', function ($scope, $http, piUrls, piPopup, $state) {
 
         $scope.pendingPurchases = [];
         $scope.deployedPurchases = [];
@@ -47,6 +47,10 @@ angular.module('piDeployments.controllers', [])
                 default:
                     return [];
             }
+        };
+
+        $scope.editPurchase = function (purchaseId) {
+            $state.go('home.spotpurchase', { purchaseId: purchaseId });
         };
 
         // Load purchases by status

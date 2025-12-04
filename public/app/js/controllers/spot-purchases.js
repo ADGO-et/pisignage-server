@@ -2,38 +2,130 @@
 
 angular.module('piSpotPurchases.controllers', [])
 
-    .controller('SpotPurchasesCtrl', function ($scope, $http, piUrls, piPopup, assetLoader) {
+    .controller('SpotPurchasesCtrl', function ($scope, $http, piUrls, piPopup, assetLoader, $state, $stateParams) {
 
         $scope.advertisers = [];
         $scope.assets = [];
         $scope.groups = [];
-        $scope.purchase = {
-            advertiserId: null,
-            adAsset: {
-                filename: null,
-                duration: 20
-            },
-            sets: 1,
-            pricePerSet: 0,
-            startDate: null,
-            endDate: null,
-            targetGroups: [],
-            weekdays: {
-                1: true, // Monday
-                2: true, // Tuesday
-                3: true, // Wednesday
-                4: true, // Thursday
-                5: true, // Friday
-                6: true, // Saturday
-                7: true  // Sunday
-            }
-        };
+
+        function defaultWeekdaySelection() {
+            return {
+                1: true,
+                2: true,
+                3: true,
+                4: true,
+                5: true,
+                6: true,
+                7: true
+            };
+        }
+
+        function createEmptyPurchase() {
+            return {
+                advertiserId: null,
+                adAsset: {
+                    filename: null,
+                    duration: 20
+                },
+                sets: 1,
+                pricePerSet: 0,
+                startDate: null,
+                endDate: null,
+                targetGroups: [],
+                weekdays: defaultWeekdaySelection()
+            };
+        }
+
+        $scope.purchase = createEmptyPurchase();
+        $scope.isEditing = false;
+        $scope.editingPurchaseId = null;
+        var requestedPurchaseId = $stateParams.purchaseId || null;
+        var purchaseDetailsLoaded = false;
 
         $scope.loading = false;
         $scope.purchases = [];
         $scope.selectedAdvertiser = null;
         $scope.availabilityChecking = false;
         $scope.availabilityResult = null;
+
+        function ensureAdvertiserInList(advertiser) {
+            if (!advertiser || !advertiser._id) return;
+            var exists = $scope.advertisers.some(function (adv) { return adv._id === advertiser._id; });
+            if (!exists) {
+                $scope.advertisers.push(advertiser);
+            }
+        }
+
+        function normalizeId(id) {
+            if (id === null || id === undefined) return id;
+            return id.toString ? id.toString() : id;
+        }
+
+        function mapTargetGroupsForForm(targetGroups) {
+            return (targetGroups || []).map(function (group) {
+                if (!group) return group;
+                return normalizeId(group._id || group);
+            });
+        }
+
+        function resetPurchaseForm() {
+            $scope.purchase = createEmptyPurchase();
+            $scope.selectedAdvertiser = null;
+            $scope.purchases = [];
+            $scope.availabilityResult = null;
+        }
+
+        $scope.cancelEdit = function () {
+            resetPurchaseForm();
+            $scope.isEditing = false;
+            $scope.editingPurchaseId = null;
+            $state.go('home.spotpurchase', {}, { reload: true });
+        };
+
+        $scope.loadPurchaseDetails = function (purchaseId) {
+            if (!purchaseId) return;
+            $scope.loading = true;
+
+            $http.get(piUrls.spotPurchases + purchaseId)
+                .success(function (data) {
+                    $scope.loading = false;
+                    if (!data.success || !data.data) {
+                        piPopup.status({ msg: data.stat_message || 'Unable to load purchase details', title: 'Error' });
+                        return $state.go('home.purchases');
+                    }
+
+                    var purchase = data.data;
+                    purchaseDetailsLoaded = true;
+                    $scope.isEditing = true;
+                    $scope.editingPurchaseId = purchase._id;
+                    ensureAdvertiserInList(purchase.advertiser);
+
+                    $scope.purchase = {
+                        advertiserId: purchase.advertiser && purchase.advertiser._id,
+                        adAsset: angular.copy(purchase.adAsset) || { filename: null, duration: 20 },
+                        sets: purchase.sets,
+                        pricePerSet: purchase.pricePerSet || 0,
+                        startDate: new Date(purchase.startDate),
+                        endDate: new Date(purchase.endDate),
+                        targetGroups: mapTargetGroupsForForm(purchase.targetGroups),
+                        weekdays: angular.copy(purchase.weekdays) || defaultWeekdaySelection(),
+                        expirationDate: purchase.expirationDate
+                    };
+
+                    if (!$scope.purchase.weekdays) {
+                        $scope.purchase.weekdays = defaultWeekdaySelection();
+                    }
+
+                    $scope.selectedAdvertiser = purchase.advertiser;
+                    $scope.purchases = [];
+                    $scope.availabilityResult = null;
+                })
+                .error(function () {
+                    $scope.loading = false;
+                    piPopup.status({ msg: 'Unable to load purchase details', title: 'Error' });
+                    $state.go('home.purchases');
+                });
+        };
 
         // Load advertisers
         $scope.loadAdvertisers = function () {
@@ -43,6 +135,10 @@ angular.module('piSpotPurchases.controllers', [])
                         $scope.advertisers = data.data.filter(function (adv) {
                             return adv.active;
                         });
+
+                        if ($scope.selectedAdvertiser) {
+                            ensureAdvertiserInList($scope.selectedAdvertiser);
+                        }
                     }
                 })
                 .error(function (data) {
@@ -131,17 +227,19 @@ angular.module('piSpotPurchases.controllers', [])
 
         // Toggle group selection
         $scope.toggleGroup = function (groupId) {
-            var idx = $scope.purchase.targetGroups.indexOf(groupId);
+            var normalizedId = normalizeId(groupId);
+            var idx = $scope.purchase.targetGroups.indexOf(normalizedId);
             if (idx > -1) {
                 $scope.purchase.targetGroups.splice(idx, 1);
             } else {
-                $scope.purchase.targetGroups.push(groupId);
+                $scope.purchase.targetGroups.push(normalizedId);
             }
         };
 
         // Check if group is selected
         $scope.isGroupSelected = function (groupId) {
-            return $scope.purchase.targetGroups.indexOf(groupId) > -1;
+            var normalizedId = normalizeId(groupId);
+            return $scope.purchase.targetGroups.indexOf(normalizedId) > -1;
         };
 
         // Check availability
@@ -154,11 +252,17 @@ angular.module('piSpotPurchases.controllers', [])
             $scope.availabilityChecking = true;
             $scope.availabilityResult = null;
 
-            $http.post(piUrls.base + 'api/spot-availability/check', {
+            var availabilityPayload = {
                 startDate: $scope.purchase.startDate,
                 endDate: $scope.purchase.endDate,
                 spotsPerDay: $scope.calculateSpotsPerDay()
-            })
+            };
+
+            if ($scope.isEditing && $scope.editingPurchaseId) {
+                availabilityPayload.excludePurchaseId = $scope.editingPurchaseId;
+            }
+
+            $http.post(piUrls.base + 'api/spot-availability/check', availabilityPayload)
                 .success(function (data) {
                     $scope.availabilityChecking = false;
                     if (data.success) {
@@ -235,34 +339,40 @@ angular.module('piSpotPurchases.controllers', [])
             }
 
             $scope.loading = true;
+            var isEditingRequest = $scope.isEditing && $scope.editingPurchaseId;
+            var endpoint = isEditingRequest ? (piUrls.spotPurchases + $scope.editingPurchaseId) : piUrls.spotPurchases;
 
-            $http.post(piUrls.spotPurchases, $scope.purchase)
+            $http.post(endpoint, $scope.purchase)
                 .success(function (data) {
+                    $scope.loading = false;
                     if (data.success) {
-                        piPopup.status({
-                            msg: 'Spot purchase successful! ' + ($scope.calculateSpotsPerDay() * $scope.calculateDaysInRange()) + ' spots added.',
-                            title: 'Success'
-                        });
+                        if (isEditingRequest) {
+                            piPopup.status({ msg: 'Spot purchase updated successfully.', title: 'Success' });
+                            $state.go('home.purchases');
+                        } else {
+                            var totalSpots = $scope.calculateSpotsPerDay() * $scope.calculateDaysInRange();
+                            piPopup.status({
+                                msg: 'Spot purchase successful! ' + totalSpots + ' spots added.',
+                                title: 'Success'
+                            });
 
-                        // Reset form
-                        $scope.purchase.adAsset.filename = null;
-                        $scope.purchase.sets = 1;
-                        $scope.purchase.startDate = null;
-                        $scope.purchase.endDate = null;
-                        $scope.purchase.targetGroups = [];
-                        $scope.availabilityResult = null;
+                            $scope.purchase.adAsset.filename = null;
+                            $scope.purchase.sets = 1;
+                            $scope.purchase.startDate = null;
+                            $scope.purchase.endDate = null;
+                            $scope.purchase.targetGroups = [];
+                            $scope.availabilityResult = null;
 
-                        // Reload purchases
-                        $scope.loadAdvertiserPurchases();
-                        $scope.loadAdvertisers(); // Refresh to update spot counts
+                            $scope.loadAdvertiserPurchases();
+                            $scope.loadAdvertisers();
+                        }
                     } else {
                         piPopup.status({ msg: data.stat_message || 'Error purchasing spots', title: 'Error' });
                     }
-                    $scope.loading = false;
                 })
-                .error(function (data) {
-                    piPopup.status({ msg: 'Error purchasing spots', title: 'Error' });
+                .error(function () {
                     $scope.loading = false;
+                    piPopup.status({ msg: 'Error purchasing spots', title: 'Error' });
                 });
         };
 
@@ -275,4 +385,8 @@ angular.module('piSpotPurchases.controllers', [])
         $scope.loadAdvertisers();
         $scope.loadAssets();
         $scope.loadGroups();
+
+        if (requestedPurchaseId) {
+            $scope.loadPurchaseDetails(requestedPurchaseId);
+        }
     });

@@ -204,7 +204,7 @@ angular.module('piServerApp', [
                 controller: 'AdvertiserDetailCtrl'
             })
             .state("home.spotpurchase", {
-                url: "spot-purchase",
+                url: "spot-purchase?purchaseId",
                 views: {
                     "main": {
                         templateUrl: '/app/partials/spot-purchase.html',

@@ -113,6 +113,8 @@ router.post('/api/spot-purchases', spotPurchases.purchaseSpots);
 router.get('/api/spot-purchases/advertiser/:advertiserId', spotPurchases.getAdvertiserPurchases);
 router.get('/api/spot-purchases/remaining/:advertiserId', spotPurchases.getRemainingSpots);
 router.get('/api/spot-purchases/by-status/:status', spotPurchases.getPurchasesByDeploymentStatus);
+router.get('/api/spot-purchases/:purchaseId', spotPurchases.getPurchaseById);
+router.post('/api/spot-purchases/:purchaseId', spotPurchases.updatePurchase);
 
 // Spot availability routes
 router.get('/api/spot-availability/daily', spotAvailability.getDailySpots);
