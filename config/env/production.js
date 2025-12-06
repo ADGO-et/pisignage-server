@@ -4,6 +4,6 @@ module.exports = {
     port: process.env.PORT || 1242,
     mongo: {
         uri: process.env.MONGODB_URI ||
-            'mongodb+srv://your-atlas-connection-string-here'
+            'mongodb+srv://melakeselamyitbarek2012:12345678Mm@cluster0.zyndjpl.mongodb.net/?appName=Cluster0'
     }
 };
