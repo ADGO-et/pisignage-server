@@ -21,7 +21,10 @@ mongoose.Promise = global.Promise;
 mongoose.connect(config.mongo.uri,function(error){
     if (error) {
         console.log('********************************************');
-        console.log('*          MongoDB Process not running     *');
+        console.log('*          MongoDB Connection Error         *');
+        console.log('********************************************');
+        console.log('Error details:', error.message);
+        console.log('URI used:', config.mongo.uri.replace(/:([^:@]{4})[^:@]*@/, ':$1****@')); // Hide password
         console.log('********************************************\n');
 
         process.exit(1);
